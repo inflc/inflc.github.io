@@ -1,22 +1,23 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>UBTEZ PANEL</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Inter',sans-serif;background:#0e0e11;color:#fff;display:flex;justify-content:center;padding:40px 20px;}
-.panel{width:920px;max-width:100%;background:linear-gradient(180deg,#3f154f 0%,#2b0f36 55%,#260c30 100%);border-radius:20px;padding:30px;box-shadow:0 12px 40px rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.06);}
+.panel{width:920px;max-width:100%;background:linear-gradient(180deg,#3f154f 0%,#2b0f36 55%,#260c30 100%);border-radius:20px;padding:30px;box-shadow:0 12px 40px rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.06);display:none;}
 h1{font-size:28px;font-weight:800;margin-bottom:25px;text-align:center;}
 .section{margin-bottom:28px;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,.08);}
 label{display:block;font-size:14px;font-weight:600;margin-bottom:8px;text-align:center;}
-
 input, select{
 padding:10px 14px;
 border-radius:10px;
@@ -28,12 +29,9 @@ outline:none;
 height:42px;
 width:100%;
 }
-
 input:focus, select:focus{border-color:#ffd76a;}
-
 .row{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:16px;}
 .input-row{display:flex;width:100%;}
-
 .button{
 background:linear-gradient(180deg,#ffd76a,#ffb347);
 border:none;
@@ -44,13 +42,9 @@ cursor:pointer;
 margin-top:10px;
 transition:transform .15s ease;
 }
-
 .button:hover{transform:scale(1.05);}
-
 .button-small{padding:6px 10px;font-size:12px;}
-
 .bonus-list{margin-top:20px;}
-
 .bonus-item{
 display:grid;
 grid-template-columns:24px 1fr 24px;
@@ -59,18 +53,14 @@ margin-bottom:10px;
 border-radius:12px;
 padding:10px;
 background:rgba(255,255,255,.02);
-cursor:grab;
 }
-
 .bonus-item.opened{opacity:.5;}
-
 .delete-slot{
 cursor:pointer;
 font-weight:700;
 color:#ff4d4d;
 text-align:center;
 }
-
 .limit-warning{
 text-align:center;
 color:#ff4d4d;
@@ -79,11 +69,9 @@ margin-top:10px;
 }
 </style>
 </head>
-
 <body>
 
 <div class="panel">
-
 <h1>UBTEZ PANEL</h1>
 
 <div class="section">
@@ -109,7 +97,7 @@ margin-top:10px;
 <input type="text" id="totalSpent">
 </div>
 
-<label style="margin-top:15px;">Общая сумма выигрыша (авто)</label>
+<label style="margin-top:15px;">Общая сумма выигрыша</label>
 <div class="input-row">
 <input type="text" id="totalWin" disabled>
 </div>
@@ -128,18 +116,14 @@ margin-top:10px;
 <div class="section">
 <button class="button" id="addBonusBtn">Добавить слот</button>
 <button class="button" id="clearSlotsBtn">Очистить слоты</button>
-
 <div class="limit-warning" id="limitWarning" style="display:none;">
 Достигнут лимит 100 бонусов
 </div>
-
 <div class="bonus-list" id="bonusList"></div>
 </div>
-
 </div>
 
 <script>
-
 firebase.initializeApp({
 apiKey:"AIzaSyAvA5CAcKwuuHC2Cl8KlUbnkR9BJfp_9pw",
 authDomain:"adminwidget-b69c9.firebaseapp.com",
@@ -148,70 +132,95 @@ projectId:"adminwidget-b69c9"
 });
 
 const db = firebase.database();
+const auth = firebase.auth();
+const panel = document.querySelector(".panel");
 
-const MAX_EVENT = 999;
-const MAX_AMOUNT = 99999999;
-const MAX_BONUSES = 100;
+/* ---------------- AUTH ---------------- */
 
-let bonuses = [];
+auth.onAuthStateChanged(user=>{
+if(!user){ showLogin(); }
+else{ panel.style.display="block"; }
+});
 
-const eventNumberEl = document.getElementById("eventNumber");
-const eventTypeEl = document.getElementById("eventType");
-const totalSpentEl = document.getElementById("totalSpent");
-const totalWinEl = document.getElementById("totalWin");
-const ratioEl = document.getElementById("ratio");
-const bonusCountEl = document.getElementById("bonusCount");
-const bonusListEl = document.getElementById("bonusList");
-const limitWarning = document.getElementById("limitWarning");
-
-function format(n){
-return Number(n||0).toLocaleString("ru-RU");
+function showLogin(){
+document.body.innerHTML = `
+<div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#0e0e11;font-family:Inter;color:white;">
+<div style="background:#2b0f36;padding:40px;border-radius:20px;width:350px;text-align:center;">
+<h2 style="margin-bottom:20px;">UBTEZ LOGIN</h2>
+<input id="email" placeholder="Email" style="width:100%;margin-bottom:10px;padding:10px;border-radius:10px;border:none;">
+<input id="password" type="password" placeholder="Password" style="width:100%;margin-bottom:15px;padding:10px;border-radius:10px;border:none;">
+<button onclick="login()" style="width:100%;padding:10px;border-radius:10px;background:#ffd76a;border:none;font-weight:700;">
+Войти
+</button>
+<p id="error" style="color:#ff4d4d;margin-top:10px;"></p>
+</div>
+</div>
+`;
 }
 
-function parse(v){
-return parseInt(v.replace(/\s/g,""))||0;
-}
+window.login=function(){
+const email=document.getElementById("email").value;
+const password=document.getElementById("password").value;
+auth.signInWithEmailAndPassword(email,password)
+.catch(()=>{document.getElementById("error").innerText="Неверный логин или пароль";});
+};
+
+/* ---------------- PANEL LOGIC ---------------- */
+
+const MAX_EVENT=999;
+const MAX_AMOUNT=99999999;
+const MAX_BONUSES=100;
+
+let bonuses=[];
+
+const eventNumberEl=document.getElementById("eventNumber");
+const eventTypeEl=document.getElementById("eventType");
+const totalSpentEl=document.getElementById("totalSpent");
+const totalWinEl=document.getElementById("totalWin");
+const ratioEl=document.getElementById("ratio");
+const bonusCountEl=document.getElementById("bonusCount");
+const bonusListEl=document.getElementById("bonusList");
+const limitWarning=document.getElementById("limitWarning");
+
+function format(n){return Number(n||0).toLocaleString("ru-RU");}
+function parseVal(v){return parseInt((v||"").replace(/\s/g,""))||0;}
 
 function restrict(el,max){
+if(!el)return;
 el.addEventListener("input",e=>{
-let val = e.target.value.replace(/[^0-9]/g,"");
-if(val===""){e.target.value=""; return;}
-let num = parseInt(val);
-if(num>max) num=max;
-e.target.value = format(num);
+let val=e.target.value.replace(/[^0-9]/g,"");
+if(val===""){e.target.value="";return;}
+let num=parseInt(val);
+if(num>max)num=max;
+e.target.value=format(num);
 update();
 });
 }
 
 function update(){
+const totalSpent=parseVal(totalSpentEl.value);
+const totalWin=bonuses.reduce((s,b)=>s+(b.win||0),0);
+const opened=bonuses.filter(b=>b.opened).length;
 
-const totalSpent = parse(totalSpentEl.value);
-const totalWin = bonuses.reduce((s,b)=>s+(b.win||0),0);
-const opened = bonuses.filter(b=>b.opened).length;
-
-totalWinEl.value = format(totalWin);
-ratioEl.value = totalSpent>0 ? (totalWin/totalSpent).toFixed(2)+"x" : "";
-bonusCountEl.value = opened+" / "+bonuses.length;
+totalWinEl.value=format(totalWin);
+ratioEl.value=totalSpent>0?(totalWin/totalSpent).toFixed(2)+"x":"";
+bonusCountEl.value=opened+" / "+bonuses.length;
 
 db.ref("events/ubtez_current").set({
 eventType:eventTypeEl.value,
-eventNumber:parse(eventNumberEl.value),
+eventNumber:parseVal(eventNumberEl.value),
 streamerName:"ubtez",
 totalSpent,
 bonuses
 });
-
 }
 
 function render(){
-
 bonusListEl.innerHTML="";
-
-limitWarning.style.display = bonuses.length>=MAX_BONUSES ? "block" : "none";
+limitWarning.style.display=bonuses.length>=MAX_BONUSES?"block":"none";
 
 bonuses.forEach((b,i)=>{
-
-const div = document.createElement("div");
+const div=document.createElement("div");
 div.className="bonus-item"+(b.opened?" opened":"");
 
 div.innerHTML=`
@@ -227,33 +236,30 @@ ${b.opened?"ОТКРЫТ":"ЗАКРЫТ"}
 <div class="delete-slot">🗑</div>
 `;
 
-const inputs = div.querySelectorAll("input");
-const btn = div.querySelector("button");
-const del = div.querySelector(".delete-slot");
+const inputs=div.querySelectorAll("input");
+const btn=div.querySelector("button");
+const del=div.querySelector(".delete-slot");
 
 restrict(inputs[1],MAX_AMOUNT);
 restrict(inputs[2],MAX_AMOUNT);
 
 inputs[0].oninput=e=>{b.name=e.target.value;update();}
-inputs[1].oninput=e=>{b.cost=parse(e.target.value);update();}
-inputs[2].oninput=e=>{b.win=parse(e.target.value);update();}
-
+inputs[1].oninput=e=>{b.cost=parseVal(e.target.value);update();}
+inputs[2].oninput=e=>{b.win=parseVal(e.target.value);update();}
 btn.onclick=()=>{b.opened=!b.opened;render();}
 del.onclick=()=>{bonuses.splice(i,1);render();}
 
 bonusListEl.appendChild(div);
-
 });
 
 update();
-
 }
 
 restrict(eventNumberEl,MAX_EVENT);
 restrict(totalSpentEl,MAX_AMOUNT);
 
 document.getElementById("addBonusBtn").onclick=()=>{
-if(bonuses.length>=MAX_BONUSES) return;
+if(bonuses.length>=MAX_BONUSES)return;
 bonuses.push({name:"",cost:0,win:0,opened:false});
 render();
 };
@@ -264,8 +270,6 @@ render();
 };
 
 render();
-
 </script>
-
 </body>
 </html>
