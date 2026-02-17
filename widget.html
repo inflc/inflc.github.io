@@ -60,13 +60,15 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// берём eventKey из URL: widget.html?event=bonushunt_254
+// Берём eventKey из URL: widget.html?event=bonusbuy_252
 const params = new URLSearchParams(window.location.search);
 const eventKey = params.get('event') || 'bonusbuy_252';
 
 db.ref('events/' + eventKey).on('value', snapshot => {
   const data = snapshot.val();
   if(!data) return;
+
+  const currency = data.eventCurrency || '$';
 
   // Тип события и номер
   document.getElementById('badge').textContent = (data.eventType||'BONUS').toUpperCase();
@@ -79,25 +81,24 @@ db.ref('events/' + eventKey).on('value', snapshot => {
   const opened = (data.bonuses||[]).filter(b=>b.opened).length;
   const totalCount = (data.bonuses||[]).length;
 
-  document.getElementById('totalSpent').textContent = "$" + totalSpent.toLocaleString();
-  document.getElementById('lossRatio').textContent = totalSpent>0?(totalWin/totalSpent).toFixed(2) + "x":'0x';
+  document.getElementById('totalSpent').textContent = currency + totalSpent.toLocaleString();
+  document.getElementById('lossRatio').textContent = totalSpent>0 ? (totalWin/totalSpent).toFixed(2)+'x' : '0x';
   document.getElementById('bonusCount').textContent = opened + "/" + totalCount;
-
-  // Сортировка бонусов
-  const bonuses = (data.bonuses||[]).slice();
-  bonuses.sort((a,b)=>b.win-a.win);
-  const maxBonus = bonuses[0];
-  const remaining = bonuses.slice(1);
 
   const listEl = document.getElementById('bonusList');
   listEl.innerHTML = '';
 
-  // Максимальный бонус
-  if(maxBonus){
+  if(!data.bonuses) return;
+
+  // Максимальный бонус (highlight)
+  const maxBonus = data.bonuses.reduce((max,b) => b.win > (max.win||0) ? b : max, {});
+  const remaining = data.bonuses.filter(b => b !== maxBonus);
+
+  if(maxBonus && maxBonus.win > 0){
     const div = document.createElement('div');
     div.className = 'item highlight';
-    const nameShort = maxBonus.name.length>15?maxBonus.name.slice(0,15)+'…':maxBonus.name;
-    div.innerHTML = `<span>${nameShort} ($${(maxBonus.cost||0).toLocaleString()})</span><span>$${(maxBonus.win||0).toLocaleString()}</span>`;
+    const nameShort = maxBonus.name.length>15 ? maxBonus.name.slice(0,15)+'…' : maxBonus.name;
+    div.innerHTML = `<span>${nameShort} (${currency}${(maxBonus.cost||0).toLocaleString()})</span><span>${currency}${(maxBonus.win||0).toLocaleString()}</span>`;
     listEl.appendChild(div);
 
     const separator = document.createElement('div');
@@ -106,19 +107,17 @@ db.ref('events/' + eventKey).on('value', snapshot => {
     listEl.appendChild(separator);
   }
 
-  // Остальные бонусы по 10
-  const chunkSize = 10;
-  for(let start=0; start<remaining.length; start+=chunkSize){
-    const chunk = remaining.slice(start,start+chunkSize);
-    chunk.forEach((b,i)=>{
-      const div = document.createElement('div');
-      const isActive = !b.opened;
-      div.className = 'item' + (isActive?' activeBonus':'');
-      const nameShort = b.name.length>15?b.name.slice(0,15)+'…':b.name;
-      div.innerHTML = `<span>${nameShort} ($${(b.cost||0).toLocaleString()})</span><span>${b.win>0?"$"+(b.win||0).toLocaleString():"-"}</span>`;
-      listEl.appendChild(div);
-    });
-  }
+  // Остальные бонусы в порядке из админки
+  let activeSet = false;
+  remaining.forEach((b, i) => {
+    const div = document.createElement('div');
+    let isActive = !b.opened && !activeSet;
+    if(isActive) activeSet = true;
+    div.className = 'item' + (isActive ? ' activeBonus' : '');
+    const nameShort = b.name.length>15 ? b.name.slice(0,15)+'…' : b.name;
+    div.innerHTML = `<span>${i+1}. ${nameShort} (${currency}${(b.cost||0).toLocaleString()})</span><span>${b.win>0 ? currency+(b.win||0).toLocaleString() : '-'}</span>`;
+    listEl.appendChild(div);
+  });
 });
 </script>
 </body>
