@@ -3,30 +3,36 @@
 <head>
 <meta charset="UTF-8">
 <title>UBTEZ WIDGET</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
 <style>
+
 body{
   margin:0;
-  background:transparent;
+  height:100vh;
+  background:#00ff00; /* ХРОМА ДЛЯ OBS */
+  display:flex;
+  justify-content:center;
+  align-items:center;
   font-family:'Inter',sans-serif;
 }
 
 .widget{
   width:440px;
-  background:linear-gradient(180deg,#3f154f 0%,#2b0f36 55%,#260c30 100%);
+  background:linear-gradient(180deg,#3f154f 0%,#2b0f36 60%,#260c30 100%);
   border-radius:18px;
   padding:20px;
   color:#fff;
-  border:1px solid rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,.08);
 }
 
 .header{
   display:flex;
   gap:12px;
-  margin-bottom:16px;
+  margin-bottom:14px;
 }
 
 .badge{
@@ -48,20 +54,25 @@ body{
   opacity:.7;
 }
 
+.divider{
+  height:1px;
+  background:rgba(255,255,255,.15);
+  margin:12px 0;
+}
+
 .stats{
   display:flex;
   justify-content:space-between;
-  margin:12px 0 16px 0;
+  text-align:center;
 }
 
 .stat{
-  text-align:center;
-  font-weight:700;
   font-size:14px;
+  font-weight:700;
 }
 
 .list{
-  height:320px; /* фиксированная высота ровно под 10 слотов */
+  height:320px; /* РОВНО 10 СЛОТОВ */
   overflow:hidden;
   transition:opacity .6s ease;
 }
@@ -72,10 +83,12 @@ body{
   padding:6px 0;
   font-size:14px;
   font-weight:600;
+  border-bottom:1px solid rgba(255,255,255,.06);
 }
 
 .highlight{
   color:#ffd76a;
+  font-weight:800;
 }
 
 </style>
@@ -84,13 +97,16 @@ body{
 <body>
 
 <div class="widget">
+
   <div class="header">
-    <div class="badge" id="badge">BONUS</div>
+    <div class="badge" id="badge">BONUSBUY</div>
     <div>
-      <div class="title" id="eventTitle">EVENT #0</div>
+      <div class="title" id="title">BONUSBUY #0</div>
       <div class="subtitle">ubtez</div>
     </div>
   </div>
+
+  <div class="divider"></div>
 
   <div class="stats">
     <div class="stat">💰 <span id="spent">0₽</span></div>
@@ -98,7 +114,10 @@ body{
     <div class="stat">⭐ <span id="count">0/0</span></div>
   </div>
 
+  <div class="divider"></div>
+
   <div class="list" id="list"></div>
+
 </div>
 
 <script>
@@ -114,31 +133,52 @@ const db = firebase.database();
 const ref = db.ref("events/ubtez_current");
 
 const perPage = 10;
-let page = 0;
+let currentPage = 0;
 let interval = null;
 
 function format(n){
-  return n.toLocaleString("ru-RU");
+  return Number(n||0).toLocaleString("ru-RU");
 }
 
-function renderPage(bonuses,totalSpent,totalWin,opened,total){
+function render(bonuses,totalSpent,totalWin,opened,total){
 
   const list = document.getElementById("list");
 
-  list.style.opacity=0;
+  const maxWin = Math.max(...bonuses.map(b=>b.win||0),0);
+
+  const totalPages = Math.ceil(total / perPage);
+
+  /* ---------- ЛОГИКА СТРАНИЦ ---------- */
+
+  // если ещё не все открыты → показываем страницу,
+  // на которой находится следующий неоткрытый бонус
+
+  if(opened !== total){
+    clearInterval(interval);
+    interval = null;
+
+    const nextIndex = bonuses.findIndex(b=>!b.opened);
+    currentPage = Math.floor(nextIndex / perPage);
+  }
+
+  list.style.opacity = 0;
 
   setTimeout(()=>{
+
     list.innerHTML="";
 
-    const start = page*perPage;
-    const end = start+perPage;
-    const slice = bonuses.slice(start,end);
+    const start = currentPage * perPage;
+    const slice = bonuses.slice(start,start+perPage);
 
     slice.forEach((b,i)=>{
-      const div = document.createElement("div");
-      div.className="item";
 
-      div.innerHTML=`
+      const div = document.createElement("div");
+
+      const isMax = b.win === maxWin && maxWin > 0;
+
+      div.className = "item" + (isMax ? " highlight" : "");
+
+      div.innerHTML = `
         <span>${start+i+1}. ${b.name} (${format(b.cost)}₽)</span>
         <span>${b.opened ? format(b.win)+"₽" : "-"}</span>
       `;
@@ -146,9 +186,26 @@ function renderPage(bonuses,totalSpent,totalWin,opened,total){
       list.appendChild(div);
     });
 
-    list.style.opacity=1;
+    list.style.opacity = 1;
 
-  },400);
+  },300);
+
+  /* ---------- ПЛАВНОЕ ПЕРЕКЛЮЧЕНИЕ ---------- */
+
+  if(opened === total && totalPages > 1 && !interval){
+
+    interval = setInterval(()=>{
+
+      currentPage++;
+      if(currentPage >= totalPages){
+        currentPage = 0;
+      }
+
+      render(bonuses,totalSpent,totalWin,opened,total);
+
+    },6000);
+
+  }
 
 }
 
@@ -164,10 +221,10 @@ ref.on("value",snap=>{
   const total = bonuses.length;
 
   document.getElementById("badge").textContent =
-    (data.eventType||"BONUS").toUpperCase();
+    (data.eventType||"BONUSBUY").toUpperCase();
 
-  document.getElementById("eventTitle").textContent =
-    (data.eventType||"EVENT").toUpperCase()+" #"+(data.eventNumber||0);
+  document.getElementById("title").textContent =
+    (data.eventType||"BONUSBUY").toUpperCase()+" #"+(data.eventNumber||0);
 
   document.getElementById("spent").textContent =
     format(totalSpent)+"₽";
@@ -178,33 +235,11 @@ ref.on("value",snap=>{
   document.getElementById("count").textContent =
     opened+"/"+total;
 
-  /* ---------- ЛОГИКА ПЕРЕКЛЮЧЕНИЯ ---------- */
-
-  if(interval) clearInterval(interval);
-
-  page=0;
-  renderPage(bonuses,totalSpent,totalWin,opened,total);
-
-  /* СТРОГОЕ УСЛОВИЕ:
-     переключение ТОЛЬКО если
-     opened === total
-     и бонусов больше 10
-  */
-
-  if(opened === total && total > perPage){
-
-    interval = setInterval(()=>{
-      page++;
-      if(page*perPage >= total){
-        page=0;
-      }
-      renderPage(bonuses,totalSpent,totalWin,opened,total);
-    },6000); // 6 секунд
-
-  }
+  render(bonuses,totalSpent,totalWin,opened,total);
 
 });
 
 </script>
+
 </body>
 </html>
