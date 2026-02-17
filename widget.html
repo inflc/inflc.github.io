@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BonusBuy Widget</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  background:#0e0e11;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
+  font-family:'Inter',sans-serif;
+}
+.widget{
+  width:440px;
+  background:linear-gradient(180deg,#3f154f 0%,#2b0f36 55%,#260c30 100%);
+  border-radius:18px;
+  padding:22px 22px 16px;
+  color:#fff;
+  box-shadow:0 12px 40px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.06);
+}
+/* HEADER */
+.header{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin-bottom:18px;
+}
+.badge{
+  background:linear-gradient(180deg,#f2f2f2,#d9d9d9);
+  color:#000;
+  font-weight:800;
+  font-size:11px;
+  padding:6px 10px;
+  border-radius:8px;
+  letter-spacing:0.5px;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.15);
+}
+.title{
+  font-size:24px;
+  font-weight:800;
+  letter-spacing:1px;
+  line-height:1;
+}
+.subtitle{
+  font-size:12px;
+  font-weight:600;
+  opacity:0.7;
+  margin-top:4px;
+}
+/* STATS */
+.stats{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:12px;
+  padding:12px 0;
+}
+.stat{
+  text-align:center;
+  font-weight:700;
+  letter-spacing:0.5px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+.stat .icon{
+  font-size:28px;
+  margin-bottom:4px;
+}
+.stat span{
+  font-size:13px;
+  font-weight:600;
+  opacity:0.9;
+}
+.divider{
+  width:1px;
+  height:28px;
+  background:rgba(255,255,255,0.12);
+  margin:0 6px;
+}
+/* LIST */
+.list{
+  border-top:1px solid rgba(255,255,255,0.08);
+  padding-top:14px;
+  font-size:14px;
+  max-height:400px;
+  overflow:hidden;
+}
+.item{
+  display:flex;
+  justify-content:space-between;
+  padding:6px 0;
+  font-weight:600;
+  letter-spacing:0.3px;
+}
+.item span:first-child{opacity:0.95;}
+.item span:last-child{opacity:0.95;}
+.highlight{
+  color:#ffd76a;
+  text-shadow:0 0 6px rgba(255,215,106,0.25);
+}
+.activeBonus{
+  color:#ffb347;
+}
+</style>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+</head>
+<body>
+<div class="widget">
+  <div class="header">
+    <div class="badge">BONUS</div>
+    <div>
+      <div class="title" id="eventTitle">BONUSBUY #252</div>
+      <div class="subtitle" id="streamerName">EVELONE192</div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="icon">💰</div><span id="totalSpent">$0</span></div>
+    <div class="divider"></div>
+    <div class="stat"><div class="icon">❌</div><span id="lossRatio">0x</span></div>
+    <div class="divider"></div>
+    <div class="stat"><div class="icon">⭐</div><span id="bonusCount">0/0</span></div>
+  </div>
+
+  <div class="list" id="bonusList"></div>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey:"AIzaSyAvA5CAcKwuuHC2Cl8KlUbnkR9BJfp_9pw",
+  authDomain:"adminwidget-b69c9.firebaseapp.com",
+  databaseURL:"https://adminwidget-b69c9-default-rtdb.firebaseio.com",
+  projectId:"adminwidget-b69c9",
+  storageBucket:"adminwidget-b69c9.appspot.com",
+  messagingSenderId:"585800098669",
+  appId:"1:585800098669:web:65fd476b2e6eb55fe73064"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// Установи свой eventKey для конкретного стримера
+const eventKey = 'bonusbuy_252';
+
+db.ref('events/' + eventKey).on('value', snapshot => {
+  const data = snapshot.val();
+  if(!data) return;
+
+  // Заголовок и стример
+  document.getElementById('eventTitle').textContent = (data.eventType||'BONUSBUY') + ' #' + (data.eventNumber||'0');
+  document.getElementById('streamerName').textContent = data.streamerName || 'Streamer';
+
+  // Статистика
+  const totalSpent = data.totalSpent || 0;
+  const totalWin = (data.bonuses||[]).reduce((sum,b)=>sum+(b.win||0),0);
+  const opened = (data.bonuses||[]).filter(b=>b.opened).length;
+  const totalCount = (data.bonuses||[]).length;
+
+  document.getElementById('totalSpent').textContent = "$" + totalSpent.toLocaleString();
+  document.getElementById('lossRatio').textContent = totalSpent>0?(totalWin/totalSpent).toFixed(2) + "x":'0x';
+  document.getElementById('bonusCount').textContent = opened + "/" + totalCount;
+
+  // Сортируем бонусы
+  const bonuses = (data.bonuses||[]).slice();
+
+  // Первый бонус - максимальный выигрыш
+  bonuses.sort((a,b)=>b.win-a.win);
+  const maxBonus = bonuses[0];
+
+  // Остальные бонусы
+  const remaining = bonuses.slice(1);
+
+  const listEl = document.getElementById('bonusList');
+  listEl.innerHTML = '';
+
+  // Вставляем максимальный бонус сверху
+  if(maxBonus){
+    const div = document.createElement('div');
+    div.className = 'item highlight';
+    const nameShort = maxBonus.name.length>15?maxBonus.name.slice(0,15)+'…':maxBonus.name;
+    div.innerHTML = `<span>${nameShort} ($${(maxBonus.cost||0).toLocaleString()})</span><span>$${(maxBonus.win||0).toLocaleString()}</span>`;
+    listEl.appendChild(div);
+
+    const separator = document.createElement('div');
+    separator.style.borderTop='1px solid rgba(255,255,255,0.08)';
+    separator.style.margin='6px 0';
+    listEl.appendChild(separator);
+  }
+
+  // Пакеты по 10 бонусов
+  const chunkSize = 10;
+  let startIndex = 0;
+
+  while(startIndex < remaining.length){
+    const chunk = remaining.slice(startIndex,startIndex+chunkSize);
+    chunk.forEach((b,i)=>{
+      const div = document.createElement('div');
+      const isActive = !b.opened; // первый неоткрытый бонус - активный
+      div.className = 'item' + (isActive?' activeBonus':'');
+      const nameShort = b.name.length>15?b.name.slice(0,15)+'…':b.name;
+      div.innerHTML = `<span>${nameShort} ($${(b.cost||0).toLocaleString()})</span><span>${b.win>0? "$"+(b.win||0).toLocaleString():"-"}</span>`;
+      listEl.appendChild(div);
+    });
+    startIndex+=chunkSize;
+  }
+
+});
+</script>
+</body>
+</html>
