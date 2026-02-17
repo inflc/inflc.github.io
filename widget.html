@@ -13,7 +13,7 @@
 body{
   margin:0;
   height:100vh;
-  background:#00ff00; /* ХРОМА ДЛЯ OBS */
+  background:#00ff00;
   display:flex;
   justify-content:center;
   align-items:center;
@@ -31,17 +31,13 @@ body{
 
 .header{
   display:flex;
+  align-items:center;
   gap:12px;
   margin-bottom:14px;
 }
 
-.badge{
-  background:#fff;
-  color:#000;
-  font-weight:800;
-  font-size:11px;
-  padding:6px 10px;
-  border-radius:8px;
+.emoji{
+  font-size:26px;
 }
 
 .title{
@@ -71,10 +67,19 @@ body{
   font-weight:700;
 }
 
+.biggest{
+  background:rgba(255,215,106,.08);
+  padding:10px;
+  border-radius:10px;
+  font-size:14px;
+  font-weight:700;
+  color:#ffd76a;
+}
+
 .list{
-  height:320px; /* РОВНО 10 СЛОТОВ */
+  height:320px;
   overflow:hidden;
-  transition:opacity .6s ease;
+  transition:opacity .5s ease;
 }
 
 .item{
@@ -86,7 +91,7 @@ body{
   border-bottom:1px solid rgba(255,255,255,.06);
 }
 
-.highlight{
+.current{
   color:#ffd76a;
   font-weight:800;
 }
@@ -99,7 +104,7 @@ body{
 <div class="widget">
 
   <div class="header">
-    <div class="badge" id="badge">BONUSBUY</div>
+    <div class="emoji" id="emoji">🎰</div>
     <div>
       <div class="title" id="title">BONUSBUY #0</div>
       <div class="subtitle">ubtez</div>
@@ -112,6 +117,12 @@ body{
     <div class="stat">💰 <span id="spent">0₽</span></div>
     <div class="stat">❌ <span id="ratio">0x</span></div>
     <div class="stat">⭐ <span id="count">0/0</span></div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="biggest" id="biggest">
+    🏆 Самый большой выигрыш: —
   </div>
 
   <div class="divider"></div>
@@ -144,62 +155,74 @@ function render(bonuses,totalSpent,totalWin,opened,total){
 
   const list = document.getElementById("list");
 
-  const maxWin = Math.max(...bonuses.map(b=>b.win||0),0);
-
   const totalPages = Math.ceil(total / perPage);
 
-  /* ---------- ЛОГИКА СТРАНИЦ ---------- */
+  const nextIndex = bonuses.findIndex(b=>!b.opened);
+  const maxBonus = bonuses.reduce((max,b)=>
+    (b.win||0) > (max.win||0) ? b : max , {win:0});
 
-  // если ещё не все открыты → показываем страницу,
-  // на которой находится следующий неоткрытый бонус
+  /* ----- Показываем блок самого большого ----- */
+
+  const biggestBlock = document.getElementById("biggest");
+  if(maxBonus.win>0){
+    biggestBlock.innerHTML =
+      `🏆 ${maxBonus.name} — ${format(maxBonus.win)}₽`;
+  }else{
+    biggestBlock.innerHTML =
+      `🏆 Самый большой выигрыш: —`;
+  }
+
+  /* ----- ЛОГИКА СТРАНИЦ ----- */
 
   if(opened !== total){
     clearInterval(interval);
-    interval = null;
+    interval=null;
 
-    const nextIndex = bonuses.findIndex(b=>!b.opened);
-    currentPage = Math.floor(nextIndex / perPage);
+    if(nextIndex>=0){
+      currentPage = Math.floor(nextIndex / perPage);
+    }
   }
 
-  list.style.opacity = 0;
+  list.style.opacity=0;
 
   setTimeout(()=>{
 
     list.innerHTML="";
 
-    const start = currentPage * perPage;
-    const slice = bonuses.slice(start,start+perPage);
+    const start=currentPage*perPage;
+    const slice=bonuses.slice(start,start+perPage);
 
     slice.forEach((b,i)=>{
 
-      const div = document.createElement("div");
+      const div=document.createElement("div");
 
-      const isMax = b.win === maxWin && maxWin > 0;
+      const globalIndex=start+i;
 
-      div.className = "item" + (isMax ? " highlight" : "");
+      const isCurrent = globalIndex===nextIndex;
 
-      div.innerHTML = `
-        <span>${start+i+1}. ${b.name} (${format(b.cost)}₽)</span>
-        <span>${b.opened ? format(b.win)+"₽" : "-"}</span>
+      div.className="item"+(isCurrent?" current":"");
+
+      div.innerHTML=`
+        <span>${globalIndex+1}. ${b.name} (${format(b.cost)}₽)</span>
+        <span>${b.opened?format(b.win)+"₽":"-"}</span>
       `;
 
       list.appendChild(div);
+
     });
 
-    list.style.opacity = 1;
+    list.style.opacity=1;
 
-  },300);
+  },200);
 
-  /* ---------- ПЛАВНОЕ ПЕРЕКЛЮЧЕНИЕ ---------- */
+  /* ----- ПЕРЕКЛЮЧЕНИЕ ТОЛЬКО ЕСЛИ ВСЕ ОТКРЫТЫ ----- */
 
-  if(opened === total && totalPages > 1 && !interval){
+  if(opened===total && totalPages>1 && !interval){
 
-    interval = setInterval(()=>{
+    interval=setInterval(()=>{
 
       currentPage++;
-      if(currentPage >= totalPages){
-        currentPage = 0;
-      }
+      if(currentPage>=totalPages) currentPage=0;
 
       render(bonuses,totalSpent,totalWin,opened,total);
 
@@ -211,20 +234,22 @@ function render(bonuses,totalSpent,totalWin,opened,total){
 
 ref.on("value",snap=>{
 
-  const data = snap.val();
+  const data=snap.val();
   if(!data) return;
 
-  const bonuses = data.bonuses || [];
-  const totalSpent = data.totalSpent || 0;
-  const totalWin = bonuses.reduce((s,b)=>s+(b.win||0),0);
-  const opened = bonuses.filter(b=>b.opened).length;
-  const total = bonuses.length;
+  const bonuses=data.bonuses||[];
+  const totalSpent=data.totalSpent||0;
+  const totalWin=bonuses.reduce((s,b)=>s+(b.win||0),0);
+  const opened=bonuses.filter(b=>b.opened).length;
+  const total=bonuses.length;
 
-  document.getElementById("badge").textContent =
-    (data.eventType||"BONUSBUY").toUpperCase();
+  const type=(data.eventType||"bonusbuy").toLowerCase();
+
+  document.getElementById("emoji").textContent =
+    type==="bonushunt" ? "🍀" : "🎰";
 
   document.getElementById("title").textContent =
-    (data.eventType||"BONUSBUY").toUpperCase()+" #"+(data.eventNumber||0);
+    type.toUpperCase()+" #"+(data.eventNumber||0);
 
   document.getElementById("spent").textContent =
     format(totalSpent)+"₽";
