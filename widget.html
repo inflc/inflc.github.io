@@ -34,11 +34,11 @@ body{margin:0;background:#0e0e11;display:flex;justify-content:center;align-items
     <div class="badge" id="badge">BONUS</div>
     <div>
       <div class="title" id="eventTitle">EVENT #0</div>
-      <div class="subtitle" id="streamerName">Streamer</div>
+      <div class="subtitle" id="streamerName">ubtez</div>
     </div>
   </div>
   <div class="stats">
-    <div class="stat"><div class="icon">💰</div><span id="totalSpent">$0</span></div>
+    <div class="stat"><div class="icon">💰</div><span id="totalSpent">₽0</span></div>
     <div class="divider"></div>
     <div class="stat"><div class="icon">❌</div><span id="lossRatio">0x</span></div>
     <div class="divider"></div>
@@ -60,27 +60,27 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// Берём eventKey из URL: widget.html?event=bonusbuy_252
-const params = new URLSearchParams(window.location.search);
-const eventKey = params.get('event') || 'bonusbuy_252';
+// Жёсткая привязка к твоему нику
+const eventKey = 'ubtez_current';
 
 db.ref('events/' + eventKey).on('value', snapshot => {
   const data = snapshot.val();
   if(!data) return;
 
-  const currency = data.currency || '$';
-
+  // Валюта
+  let currency = '₽';
+  if(data.currency && data.currency === 'USD') currency = '$';
+  
   // Тип события и номер
-  const eventType = (data.eventType || 'BONUS').toUpperCase();
-  document.getElementById('badge').textContent = eventType;
-  document.getElementById('eventTitle').textContent = eventType + ' #' + (data.eventNumber || '0');
-  document.getElementById('streamerName').textContent = data.streamerName || 'Streamer';
+  document.getElementById('badge').textContent = (data.eventType || 'BONUS').toUpperCase();
+  document.getElementById('eventTitle').textContent = (data.eventType || 'EVENT').toUpperCase() + ' #' + (data.eventNumber || '0');
+  document.getElementById('streamerName').textContent = data.streamerName || 'ubtez';
 
   // Статистика
   const totalSpent = data.totalSpent || 0;
-  const totalWin = (data.bonuses || []).reduce((sum,b)=>sum+(b.win||0),0);
-  const opened = (data.bonuses || []).filter(b=>b.opened).length;
-  const totalCount = (data.bonuses || []).length;
+  const totalWin = (data.bonuses||[]).reduce((sum,b)=>sum+(b.win||0),0);
+  const opened = (data.bonuses||[]).filter(b=>b.opened).length;
+  const totalCount = (data.bonuses||[]).length;
 
   document.getElementById('totalSpent').textContent = currency + totalSpent.toLocaleString();
   document.getElementById('lossRatio').textContent = totalSpent>0 ? (totalWin/totalSpent).toFixed(2)+'x' : '0x';
@@ -88,14 +88,13 @@ db.ref('events/' + eventKey).on('value', snapshot => {
 
   const listEl = document.getElementById('bonusList');
   listEl.innerHTML = '';
-
   if(!data.bonuses) return;
 
-  // Максимальный бонус (highlight)
-  const maxBonus = data.bonuses.reduce((max,b) => b.win > (max.win||0) ? b : max, {});
-  const remaining = data.bonuses.filter(b => b !== maxBonus);
+  // Максимальный бонус
+  const maxBonus = data.bonuses.reduce((max,b)=>b.win > (max.win||0) ? b : max, {});
+  const remaining = data.bonuses.filter(b=>b !== maxBonus);
 
-  if(maxBonus && maxBonus.win > 0){
+  if(maxBonus && maxBonus.win>0){
     const div = document.createElement('div');
     div.className = 'item highlight';
     const nameShort = maxBonus.name.length>15 ? maxBonus.name.slice(0,15)+'…' : maxBonus.name;
@@ -108,9 +107,9 @@ db.ref('events/' + eventKey).on('value', snapshot => {
     listEl.appendChild(separator);
   }
 
-  // Остальные бонусы в порядке из админки с нумерацией
+  // Остальные бонусы по порядку из админки
   let activeSet = false;
-  remaining.forEach((b, i) => {
+  remaining.forEach((b,i)=>{
     const div = document.createElement('div');
     const isActive = !b.opened && !activeSet;
     if(isActive) activeSet = true;
