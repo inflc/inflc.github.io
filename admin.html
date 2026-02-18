@@ -31,10 +31,10 @@ input:focus, select:focus{border-color:#ffd76a;}
 .limit-warning{text-align:center;color:#ff4d4d;font-size:13px;margin-top:10px;}
 .bonus-item.dragging{opacity:0.5;}
 
-/* LOGIN */
+/* LOGIN STYLES */
 #loginBox {width:360px; background:#2b0f36; padding:30px; border-radius:16px; display:flex; flex-direction:column; align-items:center;}
 #loginBox input {margin:8px 0;}
-#errorMsg {color:#ff4d4d; margin-top:8px; font-size:13px;}
+#errorMsg {color:#ff4d4d; margin-top:8px; font-size:13px; text-align:center;}
 #loginBtn {width:220px; padding:12px 0; font-size:16px; font-weight:800; margin-top:12px; border-radius:12px; background:linear-gradient(180deg,#ffd76a,#ffb347); cursor:pointer;}
 #loginBtn:hover {transform:scale(1.05);}
 </style>
@@ -54,6 +54,7 @@ input:focus, select:focus{border-color:#ffd76a;}
 <!-- PANEL -->
 <div class="panel" id="adminPanel" style="display:none;">
 <h1>WIDGET PANEL</h1>
+
 <div class="section">
 <div class="row">
 <div>
@@ -108,9 +109,9 @@ input:focus, select:focus{border-color:#ffd76a;}
 <script>
 // Firebase init
 firebase.initializeApp({
-apiKey:"AIzaSyAvA5CAcKwuuHC2Cl8KlUbnkR9BJfp_9pw",
-authDomain:"adminwidget-b69c9.firebaseapp.com",
-databaseURL:"https://adminwidget-b69c9-default-rtdb.firebaseio.com"
+  apiKey:"AIzaSyAvA5CAcKwuuHC2Cl8KlUbnkR9BJfp_9pw",
+  authDomain:"adminwidget-b69c9.firebaseapp.com",
+  databaseURL:"https://adminwidget-b69c9-default-rtdb.firebaseio.com"
 });
 
 const auth = firebase.auth();
@@ -124,7 +125,7 @@ const loginPass = document.getElementById("loginPass");
 const errorMsg = document.getElementById("errorMsg");
 const adminPanel = document.getElementById("adminPanel");
 
-let streamerNick = ""; 
+let streamerNick = "";
 
 loginBtn.onclick = () => {
   errorMsg.textContent = "";
@@ -146,11 +147,10 @@ loginBtn.onclick = () => {
         }
         streamerNick = entry[0];
 
-        // показываем панель
         loginBox.style.display="none";
         adminPanel.style.display="block";
 
-        // грузим данные стримера
+        // Загружаем данные стримера
         db.ref(`events/${streamerNick}/current`).once("value").then(snap=>{
           const data = snap.val();
           if(data){
@@ -256,7 +256,9 @@ function render(){
     bonusListEl.appendChild(div);
   });
 
+  // Drag & Drop
   let dragSrcEl = null;
+
   const items = document.querySelectorAll('.bonus-item');
   items.forEach(item=>{
     item.addEventListener('dragstart', e=>{
@@ -294,6 +296,7 @@ document.getElementById("clearSlotsBtn").onclick=()=>{
   render();
 };
 
+render();
 </script>
 </body>
 </html>
