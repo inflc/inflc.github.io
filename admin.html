@@ -11,7 +11,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
 <style>
-/* === Визуалка без изменений === */
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Inter',sans-serif;background:#0e0e11;color:#fff;display:flex;justify-content:center;padding:40px 20px;}
 .panel{width:920px;max-width:100%;background:linear-gradient(180deg,#3f154f 0%,#2b0f36 55%,#260c30 100%);border-radius:20px;padding:30px;box-shadow:0 12px 40px rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.06);}
@@ -69,12 +68,12 @@ input:focus, select:focus{border-color:#ffd76a;}
 <div class="section">
 <label>Общая сумма трат</label>
 <div class="input-row">
-<input type="text" id="totalSpent">
+<input type="text" id="totalSpent" placeholder="Сумма трат">
 </div>
 
 <label style="margin-top:15px;">Общая сумма выигрыша (авто)</label>
 <div class="input-row">
-<input type="text" id="totalWin" disabled>
+<input type="text" id="totalWin" placeholder="Сумма выигрыша" disabled>
 </div>
 
 <label style="margin-top:15px;">Окупаемость</label>
@@ -117,7 +116,7 @@ const MAX_AMOUNT = 99999999;
 const MAX_BONUSES = 100;
 
 let bonuses = [];
-let currentStreamer = "ubtez"; // по умолчанию для теста, заменяем после логина
+let currentStreamer = "ubtez"; // по умолчанию
 
 // DOM elements
 const loginPanel = document.getElementById("loginPanel");
@@ -135,13 +134,11 @@ const limitWarning = document.getElementById("limitWarning");
 
 function format(n){ return Number(n||0).toLocaleString("ru-RU"); }
 function parse(v){ return parseInt(v.replace(/\s/g,""))||0; }
+
 function restrict(el,max){
   el.addEventListener("input",e=>{
     let val = e.target.value.replace(/[^0-9]/g,"");
-    if(val===""){e.target.value=""; return;}
-    let num = parseInt(val);
-    if(num>max) num=max;
-    e.target.value = format(num);
+    e.target.value = val === "" ? "" : format(Math.min(parseInt(val), max));
     update();
   });
 }
@@ -162,8 +159,7 @@ document.getElementById("loginBtn").onclick = () => {
     .then(userCredential=>{
       loginPanel.style.display="none";
       adminPanel.style.display="block";
-      // определяем имя стримера по email
-      currentStreamer = email.split("@")[0]; // простой способ, соответствующий базе
+      currentStreamer = email.split("@")[0];
       initAdmin();
     })
     .catch(err=>{
@@ -206,8 +202,8 @@ function initAdmin(){
         <div style="color:#ffd76a;font-weight:700;">${i+1}</div>
         <div>
         <input type="text" placeholder="Название" value="${b.name||""}" ${b.opened?"disabled":""} style="width:100%;margin-bottom:6px;">
-        <input type="text" placeholder="Покупка" value="${b.cost?format(b.cost):""}" ${b.opened?"disabled":""} style="width:49%;">
-        <input type="text" placeholder="Выигрыш" value="${b.win?format(b.win):""}" ${b.opened?"disabled":""} style="width:49%;float:right;">
+        <input type="text" placeholder="Сумма покупки" value="${b.cost?format(b.cost):""}" ${b.opened?"disabled":""} style="width:49%;">
+        <input type="text" placeholder="Сумма выигрыша" value="${b.win?format(b.win):""}" ${b.opened?"disabled":""} style="width:49%;float:right;">
         <button class="button button-small" style="margin-top:6px;width:100%;">${b.opened?"ОТКРЫТ":"ЗАКРЫТ"}</button>
         </div>
         <div class="delete-slot">🗑</div>
