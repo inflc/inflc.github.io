@@ -98,6 +98,9 @@ firebase.initializeApp({
 
 const db = firebase.database();
 
+// Определяем streamerKey из URL, например admin-ubtez.html -> ubtez
+const streamerKey = (location.pathname.match(/admin-(.*)\.html$/)||[])[1] || "ubtez";
+
 const MAX_EVENT = 999;
 const MAX_AMOUNT = 99999999;
 const MAX_BONUSES = 100;
@@ -112,9 +115,6 @@ const ratioEl = document.getElementById("ratio");
 const bonusCountEl = document.getElementById("bonusCount");
 const bonusListEl = document.getElementById("bonusList");
 const limitWarning = document.getElementById("limitWarning");
-
-// путь к текущему стримеру
-const streamerKey = "ubtez"; // <-- меняешь на нужного стримера для другой админки
 
 function format(n){return Number(n||0).toLocaleString("ru-RU");}
 function parse(v){return parseInt(v.replace(/\s/g,""))||0;}
@@ -139,10 +139,11 @@ function update(){
   ratioEl.value = totalSpent>0 ? (totalWin/totalSpent).toFixed(2)+"x" : "";
   bonusCountEl.value = opened+" / "+bonuses.length;
 
-  db.ref("events/"+streamerKey).set({
-    eventType:eventTypeEl.value,
-    eventNumber:parse(eventNumberEl.value),
-    streamerName:streamerKey,
+  // Сохраняем в ветку текущего стримера
+  db.ref(`events/${streamerKey}/current`).set({
+    eventType: eventTypeEl.value,
+    eventNumber: parse(eventNumberEl.value),
+    streamerName: streamerKey,
     totalSpent,
     bonuses
   });
@@ -187,7 +188,6 @@ function render(){
 
   // Drag & Drop
   let dragSrcEl = null;
-
   const items = document.querySelectorAll('.bonus-item');
   items.forEach(item=>{
     item.addEventListener('dragstart', e=>{
@@ -224,6 +224,18 @@ document.getElementById("clearSlotsBtn").onclick=()=>{
   bonuses=[];
   render();
 };
+
+// Загружаем данные из Firebase при открытии
+db.ref(`events/${streamerKey}/current`).once('value').then(snapshot=>{
+  const data = snapshot.val();
+  if(data){
+    eventNumberEl.value = data.eventNumber || '';
+    eventTypeEl.value = data.eventType || '';
+    totalSpentEl.value = data.totalSpent ? format(data.totalSpent) : '';
+    bonuses = data.bonuses || [];
+    render();
+  }
+});
 
 render();
 </script>
