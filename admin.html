@@ -7,6 +7,7 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
 <style>
@@ -29,15 +30,28 @@ input:focus, select:focus{border-color:#ffd76a;}
 .delete-slot{cursor:pointer;font-weight:700;color:#ff4d4d;text-align:center;}
 .limit-warning{text-align:center;color:#ff4d4d;font-size:13px;margin-top:10px;}
 .bonus-item.dragging{opacity:0.5;}
+
+/* Авторизация */
+#loginBox {width:360px; background:#2b0f36; padding:30px; border-radius:16px; display:flex; flex-direction:column; align-items:center;}
+#loginBox input {margin:8px 0;}
+#errorMsg {color:#ff4d4d; margin-top:6px; font-size:13px;}
 </style>
 </head>
 
 <body>
 
-<div class="panel">
+<!-- LOGIN -->
+<div id="loginBox">
+  <h2>ВХОД</h2>
+  <input type="email" id="loginEmail" placeholder="ПОЧТА">
+  <input type="password" id="loginPass" placeholder="ПАРОЛЬ">
+  <button id="loginBtn">ВОЙТИ</button>
+  <div id="errorMsg"></div>
+</div>
 
+<!-- PANEL -->
+<div class="panel" id="adminPanel" style="display:none;">
 <h1>WIDGET PANEL</h1>
-
 <div class="section">
 <div class="row">
 <div>
@@ -87,17 +101,74 @@ input:focus, select:focus{border-color:#ffd76a;}
 
 <div class="bonus-list" id="bonusList"></div>
 </div>
-
 </div>
 
 <script>
+// Firebase init
 firebase.initializeApp({
 apiKey:"AIzaSyAvA5CAcKwuuHC2Cl8KlUbnkR9BJfp_9pw",
+authDomain:"adminwidget-b69c9.firebaseapp.com",
 databaseURL:"https://adminwidget-b69c9-default-rtdb.firebaseio.com"
 });
 
+const auth = firebase.auth();
 const db = firebase.database();
 
+// Элементы
+const loginBox = document.getElementById("loginBox");
+const loginBtn = document.getElementById("loginBtn");
+const loginEmail = document.getElementById("loginEmail");
+const loginPass = document.getElementById("loginPass");
+const errorMsg = document.getElementById("errorMsg");
+const adminPanel = document.getElementById("adminPanel");
+
+let streamerNick = ""; // ник после логина
+
+loginBtn.onclick = () => {
+  errorMsg.textContent = "";
+  const email = loginEmail.value.trim();
+  const password = loginPass.value;
+  if(!email || !password){ errorMsg.textContent="Введите почту и пароль"; return; }
+
+  auth.signInWithEmailAndPassword(email, password)
+    .then(userCredential=>{
+      const userEmail = userCredential.user.email;
+
+      db.ref("streamers").once("value").then(snap=>{
+        const streamers = snap.val();
+        const entry = Object.entries(streamers).find(([nick, e])=> e===userEmail);
+        if(!entry){
+          errorMsg.textContent="Нет доступа к админке для этой почты";
+          auth.signOut();
+          return;
+        }
+        streamerNick = entry[0];
+
+        // показываем панель
+        loginBox.style.display="none";
+        adminPanel.style.display="block";
+
+        // грузим данные стримера вместо hardcoded
+        db.ref(`events/${streamerNick}/current`).once("value").then(snap=>{
+          const data = snap.val();
+          if(data){
+            eventTypeEl.value = data.eventType || "";
+            eventNumberEl.value = data.eventNumber || "";
+            totalSpentEl.value = data.totalSpent ? parseInt(data.totalSpent).toLocaleString("ru-RU") : "";
+            bonuses = data.bonuses || [];
+            render();
+          }
+        });
+      });
+    })
+    .catch(err=>{
+      errorMsg.textContent="Неправильная почта или пароль";
+    });
+};
+
+// =========================================
+// ТВОЙ СУЩЕСТВУЮЩИЙ КОД ПАНЕЛИ (НЕ МЕНЯЕМ)
+// =========================================
 const MAX_EVENT = 999;
 const MAX_AMOUNT = 99999999;
 const MAX_BONUSES = 100;
@@ -136,10 +207,10 @@ function update(){
   ratioEl.value = totalSpent>0 ? (totalWin/totalSpent).toFixed(2)+"x" : "";
   bonusCountEl.value = opened+" / "+bonuses.length;
 
-  db.ref("events/ubtez_current").set({
+  db.ref(`events/${streamerNick}/current`).set({
     eventType:eventTypeEl.value,
     eventNumber:parse(eventNumberEl.value),
-    streamerName:"ubtez",
+    streamerName:streamerNick,
     totalSpent,
     bonuses
   });
@@ -182,9 +253,7 @@ function render(){
     bonusListEl.appendChild(div);
   });
 
-  // Drag & Drop
   let dragSrcEl = null;
-
   const items = document.querySelectorAll('.bonus-item');
   items.forEach(item=>{
     item.addEventListener('dragstart', e=>{
@@ -222,8 +291,6 @@ document.getElementById("clearSlotsBtn").onclick=()=>{
   render();
 };
 
-render();
 </script>
-
 </body>
 </html>
