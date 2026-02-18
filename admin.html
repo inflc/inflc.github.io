@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UBTEZ PANEL</title>
+<title>WIDGET PANEL</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -77,7 +77,6 @@ font-size:13px;
 margin-top:10px;
 }
 
-/* LOGIN */
 #loginScreen{
 width:420px;
 max-width:100%;
@@ -115,7 +114,7 @@ font-size:14px;
 
 <div class="panel" id="adminPanel" style="display:none;">
 
-<h1>UBTEZ PANEL</h1>
+<h1 style="text-align:left;">WIDGET PANEL</h1>
 
 <div class="section">
 <div class="row">
@@ -150,7 +149,7 @@ font-size:14px;
 <input type="text" id="ratio" disabled>
 </div>
 
-<label style="margin-top:15px;">Открыто / Всего</label>
+<label style="margin-top:15px;">Открытые и закрытые бонусы (авто)</label>
 <div class="input-row">
 <input type="text" id="bonusCount" disabled>
 </div>
@@ -181,7 +180,6 @@ projectId:"adminwidget-b69c9"
 const db = firebase.database();
 const auth = firebase.auth();
 
-/* FIX AUTO LOGIN */
 auth.signOut();
 
 const loginScreen = document.getElementById("loginScreen");
@@ -214,8 +212,6 @@ loginScreen.style.display="block";
 adminPanel.style.display="none";
 }
 });
-
-/* ТВОЙ ОРИГИНАЛЬНЫЙ КОД ДАЛЬШЕ БЕЗ ИЗМЕНЕНИЙ */
 
 const MAX_EVENT = 999;
 const MAX_AMOUNT = 99999999;
