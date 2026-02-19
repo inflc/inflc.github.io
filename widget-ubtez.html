@@ -118,7 +118,7 @@ body{
   <div class="divider"></div>
 
   <div class="stats">
-    <div>💰 <span id="spent">0₽</span></div>
+    <div>💰 <span id="spent">0</span></div>
     <div>❌ <span id="ratio">0x</span></div>
     <div>⭐ <span id="count">0/0</span></div>
   </div>
@@ -138,6 +138,7 @@ body{
 </div>
 
 <script>
+
 // Firebase
 firebase.initializeApp({
   apiKey:"AIzaSyAvA5CAcKwuuHC2Cl8KlUbnkR9BJfp_9pw",
@@ -147,15 +148,30 @@ firebase.initializeApp({
 });
 const db = firebase.database();
 
-// Получаем параметры URL: streamer + mode
+// URL параметры
 const params = new URLSearchParams(window.location.search);
 const streamer = params.get("streamer") || "ubtez";
 const mode = params.get("mode") || "horizontal";
 
-// Настройка списка и цвета по режиму
+// DOM
 const widgetEl = document.getElementById("widget");
 const listEl = document.getElementById("list");
 
+// Карта валют
+const currencyMap = {
+  "RUB": "₽",
+  "USD": "$",
+  "EUR": "€",
+  "KZT": "₸",
+  "UAH": "₴",
+  "BYN": "Br",
+  "USDT": "USDT",
+  "BTC": "BTC"
+};
+
+let currentCurrencySymbol = "";
+
+// Режим
 let perPage = mode === "vertical" ? 5 : 10;
 listEl.style.height = mode === "vertical" ? "215px" : "430px";
 widgetEl.style.background = mode === "vertical" 
@@ -168,6 +184,11 @@ let interval = null;
 function format(n){ return Number(n||0).toLocaleString("ru-RU"); }
 function limitName(name){ return (!name ? "" : name.length<=25 ? name : name.substring(0,22)+"..."); }
 
+function money(n){
+  if(!currentCurrencySymbol) return format(n);
+  return format(n) + currentCurrencySymbol;
+}
+
 function render(bonuses,totalSpent,totalWin,opened,total){
   const totalPages = Math.ceil(total/perPage);
   const nextIndex = bonuses.findIndex(b=>!b.opened);
@@ -177,7 +198,7 @@ function render(bonuses,totalSpent,totalWin,opened,total){
 
   const biggestBlock = document.getElementById("biggest");
   biggestBlock.innerHTML = maxBonus.win>0 
-    ? `🏆 ${format(maxBonus.win)}₽ — ${limitName(maxBonus.name)} (${format(maxBonus.cost)}₽)` 
+    ? `🏆 ${money(maxBonus.win)} — ${limitName(maxBonus.name)} (${money(maxBonus.cost)})` 
     : `🏆 —`;
 
   if(opened !== total){
@@ -197,8 +218,8 @@ function render(bonuses,totalSpent,totalWin,opened,total){
       const isCurrent = globalIndex===nextIndex;
       div.className="item"+(isCurrent?" current":"");
       div.innerHTML=`
-        <span>${globalIndex+1}. ${limitName(b.name)} (${format(b.cost)}₽)</span>
-        <span>${b.opened?format(b.win)+"₽":"-"}</span>
+        <span>${globalIndex+1}. ${limitName(b.name)} (${money(b.cost)})</span>
+        <span>${b.opened?money(b.win):"-"}</span>
       `;
       listEl.appendChild(div);
     });
@@ -215,7 +236,7 @@ function render(bonuses,totalSpent,totalWin,opened,total){
   }
 }
 
-// Подписка на данные (с учётом ветки режима!)
+// Подписка
 const ref = db.ref(`events/${mode}/${streamer}/current`);
 ref.on("value",snap=>{
   const data = snap.val();
@@ -228,14 +249,19 @@ ref.on("value",snap=>{
   const total = bonuses.length;
   const type = (data.eventType||"bonusbuy").toLowerCase();
 
+  // Получаем валюту
+  const currencyCode = data.widgetCurrency || "";
+  currentCurrencySymbol = currencyMap[currencyCode] || "";
+
   document.getElementById("emoji").textContent = type==="bonushunt"?"🍀":"🎰";
   document.getElementById("title").textContent = type.toUpperCase()+" #"+(data.eventNumber||0);
-  document.getElementById("spent").textContent = format(totalSpent)+"₽";
+  document.getElementById("spent").textContent = money(totalSpent);
   document.getElementById("ratio").textContent = totalSpent>0 ? (totalWin/totalSpent).toFixed(2)+"x" : "0x";
   document.getElementById("count").textContent = opened+"/"+total;
 
   render(bonuses,totalSpent,totalWin,opened,total);
 });
+
 </script>
 
 </body>
