@@ -189,9 +189,9 @@ function render(){
     div.innerHTML=`
 <div style="color:#ffd76a;font-weight:700;">${i+1}</div>
 <div>
-<input type="text" placeholder="Название" value="${b.name||""}" ${b.opened?"disabled":""} style="width:100%;margin-bottom:6px;">
-<input type="text" placeholder="Покупка" value="${b.cost?format(b.cost):""}" ${b.opened?"disabled":""} style="width:49%;">
-<input type="text" placeholder="Выигрыш" value="${b.win?format(b.win):""}" ${b.opened?"disabled":""} style="width:49%;float:right;">
+<input type="text" placeholder="Название слота" value="${b.name||""}" ${b.opened?"disabled":""} style="width:100%;margin-bottom:6px;">
+<input type="text" placeholder="Сумма покупки" value="${b.cost?format(b.cost):""}" ${b.opened?"disabled":""} style="width:49%;">
+<input type="text" placeholder="Сумма выигрыша" value="${b.win?format(b.win):""}" ${b.opened?"disabled":""} style="width:49%;float:right;">
 <button class="button button-small" style="margin-top:6px;width:100%;">${b.opened?"ОТКРЫТ":"ЗАКРЫТ"}</button>
 </div>
 <div class="delete-slot">🗑</div>
