@@ -39,80 +39,79 @@ input:focus, select:focus{border-color:#ffd76a;}
 <h1>WIDGET PANEL</h1>
 
 <div class="section">
-<div class="row">
-  <div>
-    <label>Номер события</label>
-    <input type="text" id="eventNumber">
+  <!-- 2x2 сетка -->
+  <div class="row">
+    <div>
+      <label>Номер события</label>
+      <input type="text" id="eventNumber">
+    </div>
+    <div>
+      <label>Валюта виджета</label>
+      <select id="widgetCurrency">
+        <option value="">—</option> <!-- дефолтный прочерк -->
+        <option value="RUB">₽ Рубль</option>
+        <option value="USD">$ Доллар</option>
+        <option value="EUR">€ Евро</option>
+        <option value="KZT">₸ Тенге</option>
+        <option value="UAH">₴ Гривня</option>
+        <option value="BYN">Br Белорусский рубль</option>
+        <option value="USDT">₮ USDT</option>
+        <option value="BTC">₿ Биткоин</option>
+      </select>
+    </div>
   </div>
-  <div>
-    <label>Тип события</label>
-    <select id="eventType">
-      <option value="">—</option>
-      <option value="bonusbuy">BONUSBUY</option>
-      <option value="bonushunt">BONUSHUNT</option>
-    </select>
-  </div>
-</div>
 
-<!-- НОВОЕ ПОЛЕ ДЛЯ ВАЛЮТЫ -->
-<div>
-  <label>Валюта виджета:</label>
-  <select id="widgetCurrency">
-    <option value="">—</option> <!-- дефолтный прочерк -->
-    <option value="RUB">₽ Рубль</option>
-    <option value="USD">$ Доллар</option>
-    <option value="EUR">€ Евро</option>
-    <option value="KZT">₸ Тенге</option>
-    <option value="UAH">₴ Гривня</option>
-    <option value="BYN">Br Белорусский рубль</option>
-    <option value="USDT">₮ USDT</option>
-    <option value="BTC">₿ Биткоин</option>
-  </select>
-</div>
-
-<div class="row">
-  <div>
-    <label>Режим виджета</label>
-    <select id="mode">
-      <option value="">—</option>
-      <option value="horizontal">ГОРИЗОНТАЛЬ</option>
-      <option value="vertical">ВЕРТИКАЛЬ</option>
-    </select>
+  <div class="row">
+    <div>
+      <label>Тип события</label>
+      <select id="eventType">
+        <option value="">—</option>
+        <option value="bonusbuy">BONUSBUY</option>
+        <option value="bonushunt">BONUSHUNT</option>
+      </select>
+    </div>
+    <div>
+      <label>Режим виджета</label>
+      <select id="mode">
+        <option value="">—</option>
+        <option value="horizontal">ГОРИЗОНТАЛЬ</option>
+        <option value="vertical">ВЕРТИКАЛЬ</option>
+      </select>
+    </div>
   </div>
-</div>
 </div>
 
 <div class="section">
-<label>Общий депозит на событие (введи)</label>
-<div class="input-row">
-<input type="text" id="totalSpent">
-</div>
+  <label>Общий депозит на событие (введи)</label>
+  <div class="input-row">
+    <input type="text" id="totalSpent">
+  </div>
 
-<label style="margin-top:15px;">Общий выигрыш с события (авто)</label>
-<div class="input-row">
-<input type="text" id="totalWin" disabled>
-</div>
+  <label style="margin-top:15px;">Общий выигрыш с события (авто)</label>
+  <div class="input-row">
+    <input type="text" id="totalWin" disabled>
+  </div>
 
-<label style="margin-top:15px;">Множитель окупаемости события (авто)</label>
-<div class="input-row">
-<input type="text" id="ratio" disabled>
-</div>
+  <label style="margin-top:15px;">Множитель окупаемости события (авто)</label>
+  <div class="input-row">
+    <input type="text" id="ratio" disabled>
+  </div>
 
-<label style="margin-top:15px;">Открытые и закрытые бонусы (авто)</label>
-<div class="input-row">
-<input type="text" id="bonusCount" disabled>
-</div>
+  <label style="margin-top:15px;">Открытые и закрытые бонусы (авто)</label>
+  <div class="input-row">
+    <input type="text" id="bonusCount" disabled>
+  </div>
 </div>
 
 <div class="section">
-<button class="button" id="addBonusBtn">Добавить слот</button>
-<button class="button" id="clearSlotsBtn">Очистить слоты</button>
+  <button class="button" id="addBonusBtn">Добавить слот</button>
+  <button class="button" id="clearSlotsBtn">Очистить слоты</button>
 
-<div class="limit-warning" id="limitWarning" style="display:none;">
-Достигнут лимит 100 бонусов
-</div>
+  <div class="limit-warning" id="limitWarning" style="display:none;">
+    Достигнут лимит 100 бонусов
+  </div>
 
-<div class="bonus-list" id="bonusList"></div>
+  <div class="bonus-list" id="bonusList"></div>
 </div>
 
 </div>
@@ -134,7 +133,8 @@ let bonuses = [];
 
 const eventNumberEl = document.getElementById("eventNumber");
 const eventTypeEl = document.getElementById("eventType");
-const modeEl = document.getElementById("mode"); // новое поле
+const modeEl = document.getElementById("mode");
+const widgetCurrencyEl = document.getElementById("widgetCurrency");
 const totalSpentEl = document.getElementById("totalSpent");
 const totalWinEl = document.getElementById("totalWin");
 const ratioEl = document.getElementById("ratio");
@@ -165,18 +165,18 @@ function update(){
   ratioEl.value = totalSpent>0 ? (totalWin/totalSpent).toFixed(2)+"x" : "";
   bonusCountEl.value = opened+" / "+bonuses.length;
 
-  // Сохраняем в ветку с учётом режима
-  const selectedMode = modeEl.value || "horizontal"; // дефолт horizontal
+  const selectedMode = modeEl.value || "horizontal";
   db.ref(`events/${selectedMode}/${streamerKey}/current`).set({
     eventType: eventTypeEl.value,
     eventNumber: parse(eventNumberEl.value),
     streamerName: streamerKey,
     totalSpent,
-    bonuses
+    bonuses,
+    widgetCurrency: widgetCurrencyEl.value // сохраняем выбранную валюту
   });
 }
 
-// --- остальная логика render и drag & drop без изменений ---
+// остальная логика render и drag & drop без изменений
 function render(){
   bonusListEl.innerHTML="";
   limitWarning.style.display = bonuses.length>=MAX_BONUSES ? "block" : "none";
@@ -214,7 +214,6 @@ function render(){
     bonusListEl.appendChild(div);
   });
 
-  // Drag & Drop
   let dragSrcEl = null;
   const items = document.querySelectorAll('.bonus-item');
   items.forEach(item=>{
@@ -253,12 +252,12 @@ document.getElementById("clearSlotsBtn").onclick=()=>{
   render();
 };
 
-// Загружаем данные из Firebase при открытии
 db.ref(`events/horizontal/${streamerKey}/current`).once('value').then(snapshot=>{
   const data = snapshot.val();
   if(data){
     eventNumberEl.value = data.eventNumber || '';
     eventTypeEl.value = data.eventType || '';
+    widgetCurrencyEl.value = data.widgetCurrency || '';
     bonuses = data.bonuses || [];
     render();
   }
