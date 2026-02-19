@@ -24,9 +24,10 @@ input:focus, select:focus{border-color:#ffd76a;}
 .button:hover{transform:scale(1.05);}
 .button-small{padding:6px 10px;font-size:12px;}
 .bonus-list{margin-top:20px;}
-.bonus-item{display:grid;grid-template-columns:24px 1fr 24px;gap:10px;margin-bottom:10px;border-radius:12px;padding:10px;background:rgba(255,255,255,.02);cursor:grab;}
+.bonus-item{display:grid;grid-template-columns:40px 1fr 40px;gap:10px;margin-bottom:10px;border-radius:12px;padding:10px;background:rgba(255,255,255,.02);cursor:grab;position:relative;align-items:center;}
 .bonus-item.opened{opacity:.5;}
-.delete-slot{cursor:pointer;font-weight:700;color:#ff4d4d;text-align:center;}
+.bonus-item .slot-number{display:flex;align-items:center;justify-content:center;height:100%;color:#ffd76a;font-weight:700;font-size:16px;}
+.bonus-item .delete-slot{cursor:pointer;font-weight:700;color:#ff4d4d;text-align:center;display:flex;align-items:center;justify-content:center;height:100%;}
 .limit-warning{text-align:center;color:#ff4d4d;font-size:13px;margin-top:10px;}
 .bonus-item.dragging{opacity:0.5;}
 </style>
@@ -38,8 +39,8 @@ input:focus, select:focus{border-color:#ffd76a;}
 
 <h1>WIDGET PANEL</h1>
 
+<!-- Секция полей 2x2 -->
 <div class="section">
-  <!-- 2x2 сетка -->
   <div class="row">
     <div>
       <label>Номер события</label>
@@ -48,7 +49,7 @@ input:focus, select:focus{border-color:#ffd76a;}
     <div>
       <label>Валюта виджета</label>
       <select id="widgetCurrency">
-        <option value="">—</option> <!-- дефолтный прочерк -->
+        <option value="">—</option>
         <option value="RUB">₽ Рубль</option>
         <option value="USD">$ Доллар</option>
         <option value="EUR">€ Евро</option>
@@ -81,6 +82,7 @@ input:focus, select:focus{border-color:#ffd76a;}
   </div>
 </div>
 
+<!-- Секция депозитов -->
 <div class="section">
   <label>Общий депозит на событие (введи)</label>
   <div class="input-row">
@@ -103,6 +105,7 @@ input:focus, select:focus{border-color:#ffd76a;}
   </div>
 </div>
 
+<!-- Секция слотов -->
 <div class="section">
   <button class="button" id="addBonusBtn">Добавить слот</button>
   <button class="button" id="clearSlotsBtn">Очистить слоты</button>
@@ -172,11 +175,10 @@ function update(){
     streamerName: streamerKey,
     totalSpent,
     bonuses,
-    widgetCurrency: widgetCurrencyEl.value // сохраняем выбранную валюту
+    widgetCurrency: widgetCurrencyEl.value
   });
 }
 
-// остальная логика render и drag & drop без изменений
 function render(){
   bonusListEl.innerHTML="";
   limitWarning.style.display = bonuses.length>=MAX_BONUSES ? "block" : "none";
@@ -187,15 +189,15 @@ function render(){
     div.setAttribute("draggable","true");
     div.dataset.index = i;
     div.innerHTML=`
-<div style="color:#ffd76a;font-weight:700;">${i+1}</div>
-<div>
-<input type="text" placeholder="Название слота" value="${b.name||""}" ${b.opened?"disabled":""} style="width:100%;margin-bottom:6px;">
-<input type="text" placeholder="Сумма покупки" value="${b.cost?format(b.cost):""}" ${b.opened?"disabled":""} style="width:49%;">
-<input type="text" placeholder="Сумма выигрыша" value="${b.win?format(b.win):""}" ${b.opened?"disabled":""} style="width:49%;float:right;">
-<button class="button button-small" style="margin-top:6px;width:100%;">${b.opened?"ОТКРЫТ":"ЗАКРЫТ"}</button>
-</div>
-<div class="delete-slot">🗑</div>
-`;
+      <div class="slot-number">${i+1}</div>
+      <div>
+        <input type="text" placeholder="Название слота" value="${b.name||""}" ${b.opened?"disabled":""} style="width:100%;margin-bottom:6px;">
+        <input type="text" placeholder="Сумма покупки" value="${b.cost?format(b.cost):""}" ${b.opened?"disabled":""} style="width:49%;">
+        <input type="text" placeholder="Сумма выигрыша" value="${b.win?format(b.win):""}" ${b.opened?"disabled":""} style="width:49%;float:right;">
+        <button class="button button-small" style="margin-top:6px;width:100%;">${b.opened?"ОТКРЫТ":"ЗАКРЫТ"}</button>
+      </div>
+      <div class="delete-slot">🗑</div>
+    `;
 
     const inputs = div.querySelectorAll("input");
     const btn = div.querySelector("button");
