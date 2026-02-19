@@ -147,7 +147,7 @@ firebase.initializeApp({
 });
 const db = firebase.database();
 
-// Параметры URL
+// Получаем параметры URL: streamer + mode
 const params = new URLSearchParams(window.location.search);
 const streamer = params.get("streamer") || "ubtez";
 const mode = params.get("mode") || "horizontal";
@@ -215,8 +215,8 @@ function render(bonuses,totalSpent,totalWin,opened,total){
   }
 }
 
-// Подписка на данные (одна ссылка на Firebase, работает для обоих режимов)
-const ref = db.ref(`events/${streamer}/current`);
+// Подписка на данные (с учётом ветки режима!)
+const ref = db.ref(`events/${mode}/${streamer}/current`);
 ref.on("value",snap=>{
   const data = snap.val();
   if(!data) return;
