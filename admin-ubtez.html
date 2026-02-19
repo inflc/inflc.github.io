@@ -40,29 +40,45 @@ input:focus, select:focus{border-color:#ffd76a;}
 
 <div class="section">
 <div class="row">
-<div>
-<label>Номер события</label>
-<input type="text" id="eventNumber">
+  <div>
+    <label>Номер события</label>
+    <input type="text" id="eventNumber">
+  </div>
+  <div>
+    <label>Тип события</label>
+    <select id="eventType">
+      <option value="">—</option>
+      <option value="bonusbuy">BONUSBUY</option>
+      <option value="bonushunt">BONUSHUNT</option>
+    </select>
+  </div>
 </div>
+
+<!-- НОВОЕ ПОЛЕ ДЛЯ ВАЛЮТЫ -->
 <div>
-<label>Тип события</label>
-<select id="eventType">
-<option value="">—</option>
-<option value="bonusbuy">BONUSBUY</option>
-<option value="bonushunt">BONUSHUNT</option>
-</select>
-</div>
+  <label>Валюта виджета:</label>
+  <select id="widgetCurrency">
+    <option value="">—</option> <!-- дефолтный прочерк -->
+    <option value="RUB">₽ Рубль</option>
+    <option value="USD">$ Доллар</option>
+    <option value="EUR">€ Евро</option>
+    <option value="KZT">₸ Тенге</option>
+    <option value="UAH">₴ Гривня</option>
+    <option value="BYN">Br Белорусский рубль</option>
+    <option value="USDT">₮ USDT</option>
+    <option value="BTC">₿ Биткоин</option>
+  </select>
 </div>
 
 <div class="row">
-<div>
-<label>Режим виджета</label>
-<select id="mode">
-<option value="">—</option>
-<option value="horizontal">ГОРИЗОНТАЛЬ</option>
-<option value="vertical">ВЕРТИКАЛЬ</option>
-</select>
-</div>
+  <div>
+    <label>Режим виджета</label>
+    <select id="mode">
+      <option value="">—</option>
+      <option value="horizontal">ГОРИЗОНТАЛЬ</option>
+      <option value="vertical">ВЕРТИКАЛЬ</option>
+    </select>
+  </div>
 </div>
 </div>
 
