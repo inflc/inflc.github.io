@@ -27,6 +27,7 @@ input:focus, select:focus{border-color:#ffd76a;}
 .button{background:linear-gradient(180deg,#ffd76a,#ffb347);border:none;padding:10px 14px;border-radius:12px;font-weight:700;cursor:pointer;margin-top:10px;transition:transform .15s ease;}
 .button:hover{transform:scale(1.05);}
 .button-small{padding:6px 10px;font-size:12px;}
+.button-group{display:flex;gap:10px;justify-content:space-between;align-items:center;margin-top:10px;}
 .bonus-list{margin-top:20px;}
 .bonus-item{display:grid;grid-template-columns:40px 1fr 40px;gap:10px;margin-bottom:10px;border-radius:12px;padding:10px;background:rgba(255,255,255,.02);cursor:grab;position:relative;align-items:center;}
 .bonus-item.opened{opacity:.5;}
@@ -34,6 +35,7 @@ input:focus, select:focus{border-color:#ffd76a;}
 .bonus-item .delete-slot{cursor:pointer;font-weight:700;color:#ff4d4d;text-align:center;display:flex;align-items:center;justify-content:center;height:100%;}
 .limit-warning{text-align:center;color:#ff4d4d;font-size:13px;margin-top:10px;}
 .bonus-item.dragging{opacity:0.5;}
+.spacer{flex:1;}
 </style>
 </head>
 
@@ -42,7 +44,7 @@ input:focus, select:focus{border-color:#ffd76a;}
 
 <h1>WIDGET PANEL</h1>
 
-<!-- Секция полей 2x2 -->
+<!-- Поля 2x2 -->
 <div class="section">
   <div class="row">
     <div>
@@ -69,16 +71,14 @@ input:focus, select:focus{border-color:#ffd76a;}
     <div>
       <label>Тип события</label>
       <select id="eventType">
-        <option value="">—</option>
-        <option value="bonusbuy">Bonusbuy</option>
+        <option value="bonusbuy" selected>Bonusbuy</option>
         <option value="bonushunt">Bonushunt</option>
       </select>
     </div>
     <div>
       <label>Режим виджета</label>
       <select id="mode">
-        <option value="">—</option>
-        <option value="horizontal">Горизонтальный</option>
+        <option value="horizontal" selected>Горизонтальный</option>
         <option value="vertical">Вертикальный</option>
       </select>
     </div>
@@ -108,10 +108,19 @@ input:focus, select:focus{border-color:#ffd76a;}
   </div>
 </div>
 
-<!-- Секция слотов -->
+<!-- Секция слотов с кнопками -->
 <div class="section">
-  <button class="button" id="addBonusBtn">Добавить слот</button>
-  <button class="button" id="clearSlotsBtn">Очистить слоты</button>
+  <div class="button-group">
+    <div style="display:flex; gap:10px;">
+      <button class="button" id="addBonusBtn">Добавить слот</button>
+      <button class="button" id="add10Btn">Добавить 10 слотов</button>
+    </div>
+    <div class="spacer"></div>
+    <div style="display:flex; gap:10px;">
+      <button class="button" id="clearSlotsBtn">Очистить слоты</button>
+      <button class="button" id="clearWidgetBtn">Очистить виджет</button>
+    </div>
+  </div>
 
   <div class="limit-warning" id="limitWarning" style="display:none;">
     Достигнут лимит 100 бонусов
@@ -243,7 +252,7 @@ function render(){
   update();
 }
 
-/* Загрузка данных по режиму */
+/* Загрузка по режиму */
 function loadDataByMode(mode){
   db.ref(`events/${mode}/${streamerKey}/current`).once("value")
     .then(snapshot=>{
@@ -251,13 +260,13 @@ function loadDataByMode(mode){
 
       if(data){
         eventNumberEl.value = data.eventNumber ? format(data.eventNumber) : "";
-        eventTypeEl.value = data.eventType || "";
+        eventTypeEl.value = data.eventType || "bonusbuy";
         widgetCurrencyEl.value = data.widgetCurrency || "";
         totalSpentEl.value = data.totalSpent ? format(data.totalSpent) : "";
         bonuses = data.bonuses || [];
       } else {
         eventNumberEl.value="";
-        eventTypeEl.value="";
+        eventTypeEl.value="bonusbuy";
         widgetCurrencyEl.value="";
         totalSpentEl.value="";
         bonuses=[];
@@ -270,17 +279,33 @@ function loadDataByMode(mode){
 restrict(eventNumberEl,MAX_EVENT);
 restrict(totalSpentEl,MAX_AMOUNT);
 
+/* Кнопки */
 document.getElementById("addBonusBtn").onclick=()=>{
   if(bonuses.length>=MAX_BONUSES) return;
   bonuses.push({name:"",cost:0,win:0,opened:false});
   render();
 };
-
+document.getElementById("add10Btn").onclick=()=>{
+  for(let i=0;i<10;i++){
+    if(bonuses.length>=MAX_BONUSES) break;
+    bonuses.push({name:"",cost:0,win:0,opened:false});
+  }
+  render();
+};
 document.getElementById("clearSlotsBtn").onclick=()=>{
   bonuses=[];
   render();
 };
+document.getElementById("clearWidgetBtn").onclick=()=>{
+  eventNumberEl.value="";
+  totalSpentEl.value="";
+  widgetCurrencyEl.value="";
+  bonuses=[];
+  update();
+  render();
+};
 
+/* Старт загрузки */
 window.addEventListener("DOMContentLoaded", ()=>{
   const initialMode = modeEl.value || "horizontal";
   loadDataByMode(initialMode);
