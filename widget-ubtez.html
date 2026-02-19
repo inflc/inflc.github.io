@@ -18,7 +18,6 @@ body{
   align-items:center;
   font-family:'Inter',sans-serif;
 }
-
 .widget{
   width:520px;
   border-radius:22px;
@@ -27,8 +26,6 @@ body{
   border:1px solid rgba(255,255,255,.08);
   transition: background 0.5s ease;
 }
-
-/* HEADER */
 .header{
   display:flex;
   justify-content:space-between;
@@ -49,8 +46,6 @@ body{
 }
 .emoji{ font-size:32px; }
 .title{ font-size:24px; font-weight:800; }
-
-/* STATS */
 .stats{
   display:flex;
   justify-content:space-between;
@@ -71,8 +66,6 @@ body{
   font-weight:800;
   color:#ffd76a;
 }
-
-/* LIST */
 .list{
   overflow:hidden;
   transition:opacity .5s ease;
@@ -104,13 +97,12 @@ body{
 <body>
 
 <div class="widget" id="widget">
-
   <div class="header">
     <div class="left-header">
       <div class="emoji" id="emoji">🎰</div>
       <div class="title" id="title">BONUSBUY #0</div>
     </div>
-    <div class="right-header">
+    <div class="right-header" id="streamerName">
       UBTEZ <span>🃏</span>
     </div>
   </div>
@@ -134,12 +126,11 @@ body{
   <div class="footer-text">
     ЭТО - ТВОЙ БУДУЩИЙ ВИДЖЕТ!
   </div>
-
 </div>
 
 <script>
 
-// Firebase
+// FIREBASE
 firebase.initializeApp({
   apiKey:"AIzaSyAvA5CAcKwuuHC2Cl8KlUbnkR9BJfp_9pw",
   authDomain:"adminwidget-b69c9.firebaseapp.com",
@@ -148,65 +139,74 @@ firebase.initializeApp({
 });
 const db = firebase.database();
 
-// URL параметры
+// URL
 const params = new URLSearchParams(window.location.search);
 const streamer = params.get("streamer") || "ubtez";
 const mode = params.get("mode") || "horizontal";
 
-// DOM
+document.getElementById("streamerName").innerHTML =
+  streamer.toUpperCase()+" <span>🃏</span>";
+
 const widgetEl = document.getElementById("widget");
 const listEl = document.getElementById("list");
 
-// Карта валют
 const currencyMap = {
-  "RUB": "₽",
-  "USD": "$",
-  "EUR": "€",
-  "KZT": "₸",
-  "UAH": "₴",
-  "BYN": "Br",
-  "USDT": "USDT",
-  "BTC": "BTC"
+  RUB:"₽",
+  USD:"$",
+  EUR:"€",
+  KZT:"₸",
+  UAH:"₴",
+  BYN:"Br",
+  USDT:" USDT",
+  BTC:" BTC"
 };
 
-let currentCurrencySymbol = "";
-
-// Режим
-let perPage = mode === "vertical" ? 5 : 10;
-listEl.style.height = mode === "vertical" ? "215px" : "430px";
-widgetEl.style.background = mode === "vertical" 
-  ? "linear-gradient(180deg,#013220 0%,#026644 60%,#014d36 100%)" 
-  : "linear-gradient(180deg,#3f154f 0%,#2b0f36 60%,#260c30 100%)";
-
+let currencySymbol = "";
+let perPage = mode==="vertical"?5:10;
 let currentPage = 0;
 let interval = null;
 
+listEl.style.height = mode==="vertical"?"215px":"430px";
+widgetEl.style.background = mode==="vertical"
+  ?"linear-gradient(180deg,#013220 0%,#026644 60%,#014d36 100%)"
+  :"linear-gradient(180deg,#3f154f 0%,#2b0f36 60%,#260c30 100%)";
+
 function format(n){ return Number(n||0).toLocaleString("ru-RU"); }
-function limitName(name){ return (!name ? "" : name.length<=25 ? name : name.substring(0,22)+"..."); }
+function limitName(name){ return !name?"":name.length<=25?name:name.substring(0,22)+"..."; }
+function money(n){ return currencySymbol?format(n)+currencySymbol:format(n); }
 
-function money(n){
-  if(!currentCurrencySymbol) return format(n);
-  return format(n) + currentCurrencySymbol;
-}
+function render(data){
+  if(!data) return;
 
-function render(bonuses,totalSpent,totalWin,opened,total){
+  const bonuses = data.bonuses||[];
+  const totalSpent = data.totalSpent||0;
+  const totalWin = bonuses.reduce((s,b)=>s+(b.win||0),0);
+  const opened = bonuses.filter(b=>b.opened).length;
+  const total = bonuses.length;
+
   const totalPages = Math.ceil(total/perPage);
   const nextIndex = bonuses.findIndex(b=>!b.opened);
 
   const maxBonus = bonuses.reduce((max,b)=>
-    (b.win||0) > (max.win||0) ? b : max , {win:0});
+    (b.win||0)>(max.win||0)?b:max , {win:0});
 
-  const biggestBlock = document.getElementById("biggest");
-  biggestBlock.innerHTML = maxBonus.win>0 
-    ? `🏆 ${money(maxBonus.win)} — ${limitName(maxBonus.name)} (${money(maxBonus.cost)})` 
-    : `🏆 —`;
+  document.getElementById("spent").textContent = money(totalSpent);
+  document.getElementById("ratio").textContent =
+    totalSpent>0?(totalWin/totalSpent).toFixed(2)+"x":"0x";
+  document.getElementById("count").textContent = opened+"/"+total;
 
-  if(opened !== total){
-    if(interval){ clearInterval(interval); interval=null; }
-    if(nextIndex>=0){ currentPage = Math.floor(nextIndex / perPage); }
+  document.getElementById("biggest").innerHTML =
+    maxBonus.win>0
+      ?`🏆 ${money(maxBonus.win)} — ${limitName(maxBonus.name)} (${money(maxBonus.cost)})`
+      :"🏆 —";
+
+  if(opened!==total){
+    if(interval){clearInterval(interval);interval=null;}
+    if(nextIndex>=0){currentPage=Math.floor(nextIndex/perPage);}
   }
 
   listEl.style.opacity=0;
+
   setTimeout(()=>{
     listEl.innerHTML="";
     const start=currentPage*perPage;
@@ -215,7 +215,7 @@ function render(bonuses,totalSpent,totalWin,opened,total){
     slice.forEach((b,i)=>{
       const div=document.createElement("div");
       const globalIndex=start+i;
-      const isCurrent = globalIndex===nextIndex;
+      const isCurrent=globalIndex===nextIndex;
       div.className="item"+(isCurrent?" current":"");
       div.innerHTML=`
         <span>${globalIndex+1}. ${limitName(b.name)} (${money(b.cost)})</span>
@@ -228,41 +228,31 @@ function render(bonuses,totalSpent,totalWin,opened,total){
   },150);
 
   if(opened===total && totalPages>1 && !interval){
-    interval = setInterval(()=>{
+    interval=setInterval(()=>{
       currentPage++;
-      if(currentPage >= totalPages) currentPage = 0;
-      render(bonuses,totalSpent,totalWin,opened,total);
+      if(currentPage>=totalPages) currentPage=0;
+      render(data);
     },6000);
   }
 }
 
-// Подписка
-const ref = db.ref(`events/${mode}/${streamer}/current`);
-ref.on("value",snap=>{
-  const data = snap.val();
+// ПОДПИСКА
+db.ref(`events/${mode}/${streamer}/current`)
+.on("value",snap=>{
+  const data=snap.val();
   if(!data) return;
 
-  const bonuses = data.bonuses||[];
-  const totalSpent = data.totalSpent||0;
-  const totalWin = bonuses.reduce((s,b)=>s+(b.win||0),0);
-  const opened = bonuses.filter(b=>b.opened).length;
-  const total = bonuses.length;
-  const type = (data.eventType||"bonusbuy").toLowerCase();
+  currencySymbol = currencyMap[data.widgetCurrency] || "";
 
-  // Получаем валюту
-  const currencyCode = data.widgetCurrency || "";
-  currentCurrencySymbol = currencyMap[currencyCode] || "";
+  const type=(data.eventType||"bonusbuy").toLowerCase();
+  document.getElementById("emoji").textContent =
+    type==="bonushunt"?"🍀":"🎰";
+  document.getElementById("title").textContent =
+    type.toUpperCase()+" #"+(data.eventNumber||0);
 
-  document.getElementById("emoji").textContent = type==="bonushunt"?"🍀":"🎰";
-  document.getElementById("title").textContent = type.toUpperCase()+" #"+(data.eventNumber||0);
-  document.getElementById("spent").textContent = money(totalSpent);
-  document.getElementById("ratio").textContent = totalSpent>0 ? (totalWin/totalSpent).toFixed(2)+"x" : "0x";
-  document.getElementById("count").textContent = opened+"/"+total;
-
-  render(bonuses,totalSpent,totalWin,opened,total);
+  render(data);
 });
 
 </script>
-
 </body>
 </html>
