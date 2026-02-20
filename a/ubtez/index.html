@@ -4,17 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WIDGET PANEL</title>
-<link rel="icon" href="data:image/svg+xml,
+  <link rel="icon" href="data:image/svg+xml,
 <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
   <text x='50' y='75' font-size='80' text-anchor='middle'>💻</text>
 </svg>">
+
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
 <style>
-/* Твои стили остаются без изменений */
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Inter',sans-serif;background:#0e0e11;color:#fff;display:flex;justify-content:center;padding:40px 20px;}
 .panel{width:920px;max-width:100%;background:linear-gradient(180deg,#3f154f 0%,#2b0f36 55%,#260c30 100%);border-radius:20px;padding:30px;box-shadow:0 12px 40px rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.06);}
@@ -28,7 +28,6 @@ input:focus, select:focus{border-color:#ffd76a;}
 .button{background:linear-gradient(180deg,#ffd76a,#ffb347);border:none;padding:10px 14px;border-radius:12px;font-weight:700;cursor:pointer;margin-top:10px;transition:transform .15s ease;}
 .button:hover{transform:scale(1.05);}
 .button-small{padding:6px 10px;font-size:12px;}
-.button-group{display:flex;gap:10px;justify-content:space-between;align-items:center;margin-top:10px;}
 .bonus-list{margin-top:20px;}
 .bonus-item{display:grid;grid-template-columns:40px 1fr 40px;gap:10px;margin-bottom:10px;border-radius:12px;padding:10px;background:rgba(255,255,255,.02);cursor:grab;position:relative;align-items:center;}
 .bonus-item.opened{opacity:.5;}
@@ -36,21 +35,21 @@ input:focus, select:focus{border-color:#ffd76a;}
 .bonus-item .delete-slot{cursor:pointer;font-weight:700;color:#ff4d4d;text-align:center;display:flex;align-items:center;justify-content:center;height:100%;}
 .limit-warning{text-align:center;color:#ff4d4d;font-size:13px;margin-top:10px;}
 .bonus-item.dragging{opacity:0.5;}
-.spacer{flex:1;}
 </style>
 </head>
 
 <body>
+
 <div class="panel">
 
 <h1>WIDGET PANEL</h1>
 
-<!-- Поля 2x2 -->
+<!-- Секция полей 2x2 -->
 <div class="section">
   <div class="row">
     <div>
       <label>Номер события</label>
-      <input type="text" id="eventNumber" placeholder="Введите номер события">
+      <input type="text" id="eventNumber">
     </div>
     <div>
       <label>Валюта виджета</label>
@@ -72,14 +71,16 @@ input:focus, select:focus{border-color:#ffd76a;}
     <div>
       <label>Тип события</label>
       <select id="eventType">
-        <option value="bonusbuy" selected>Bonusbuy</option>
+        <option value="">—</option>
+        <option value="bonusbuy">Bonusbuy</option>
         <option value="bonushunt">Bonushunt</option>
       </select>
     </div>
     <div>
       <label>Режим виджета</label>
       <select id="mode">
-        <option value="horizontal" selected>Горизонтальный</option>
+        <option value="">—</option>
+        <option value="horizontal">Горизонтальный</option>
         <option value="vertical">Вертикальный</option>
       </select>
     </div>
@@ -90,38 +91,29 @@ input:focus, select:focus{border-color:#ffd76a;}
 <div class="section">
   <label>Общий депозит на событие (ввести)</label>
   <div class="input-row">
-    <input type="text" id="totalSpent" placeholder="Введите сумму депозита">
+    <input type="text" id="totalSpent">
   </div>
 
   <label style="margin-top:15px;">Общий выигрыш с события (авто)</label>
   <div class="input-row">
-    <input type="text" id="totalWin" disabled placeholder="Авто-вычисление">
+    <input type="text" id="totalWin" disabled>
   </div>
 
   <label style="margin-top:15px;">Множитель окупаемости события (авто)</label>
   <div class="input-row">
-    <input type="text" id="ratio" disabled placeholder="Авто-вычисление">
+    <input type="text" id="ratio" disabled>
   </div>
 
   <label style="margin-top:15px;">Открытые и закрытые бонусы (авто)</label>
   <div class="input-row">
-    <input type="text" id="bonusCount" disabled placeholder="Авто-вычисление">
+    <input type="text" id="bonusCount" disabled>
   </div>
 </div>
 
-<!-- Секция слотов с кнопками -->
+<!-- Секция слотов -->
 <div class="section">
-  <div class="button-group">
-    <div style="display:flex; gap:10px;">
-      <button class="button" id="addBonusBtn">Добавить слот</button>
-      <button class="button" id="add10Btn">Добавить 10 слотов</button>
-    </div>
-    <div class="spacer"></div>
-    <div style="display:flex; gap:10px;">
-      <button class="button" id="clearSlotsBtn">Очистить слоты</button>
-      <button class="button" id="clearWidgetBtn">Очистить виджет</button>
-    </div>
-  </div>
+  <button class="button" id="addBonusBtn">Добавить слот</button>
+  <button class="button" id="clearSlotsBtn">Очистить слоты</button>
 
   <div class="limit-warning" id="limitWarning" style="display:none;">
     Достигнут лимит 100 бонусов
@@ -139,9 +131,7 @@ firebase.initializeApp({
 });
 
 const db = firebase.database();
-
-/* Читаем ник стримера из URL, например /a/ubtez/ */
-const streamerKey = (location.pathname.match(/\/a\/([^\/]+)/)||[])[1] || "ubtez";
+const streamerKey = (location.pathname.match(/admin-(.*)\.html$/)||[])[1] || "ubtez";
 
 const MAX_EVENT = 999;
 const MAX_AMOUNT = 99999999;
@@ -184,9 +174,7 @@ function update(){
   bonusCountEl.value = opened+" / "+bonuses.length;
 
   const selectedMode = modeEl.value || "horizontal";
-
-  /* Сохраняем данные в Firebase по streamerKey и режиму */
-  db.ref(`events/${streamerKey}/${selectedMode}/current`).set({
+  db.ref(`events/${selectedMode}/${streamerKey}/current`).set({
     eventType: eventTypeEl.value,
     eventNumber: parse(eventNumberEl.value),
     streamerName: streamerKey,
@@ -257,72 +245,33 @@ function render(){
   update();
 }
 
-/* Загрузка данных по режиму */
-function loadDataByMode(mode){
-  db.ref(`events/${streamerKey}/${mode}/current`).once("value")
-    .then(snapshot=>{
-      const data = snapshot.val();
-
-      if(data){
-        eventNumberEl.value = data.eventNumber ? format(data.eventNumber) : "";
-        eventTypeEl.value = data.eventType || "bonusbuy";
-        widgetCurrencyEl.value = data.widgetCurrency || "";
-        totalSpentEl.value = data.totalSpent ? format(data.totalSpent) : "";
-        bonuses = data.bonuses || [];
-      } else {
-        eventNumberEl.value="";
-        eventTypeEl.value="bonusbuy";
-        widgetCurrencyEl.value="";
-        totalSpentEl.value="";
-        bonuses=[];
-      }
-
-      render();
-    });
-}
-
-/* Ограничения на ввод */
 restrict(eventNumberEl,MAX_EVENT);
 restrict(totalSpentEl,MAX_AMOUNT);
 
-/* Кнопки */
 document.getElementById("addBonusBtn").onclick=()=>{
   if(bonuses.length>=MAX_BONUSES) return;
   bonuses.push({name:"",cost:0,win:0,opened:false});
   render();
 };
-document.getElementById("add10Btn").onclick=()=>{
-  for(let i=0;i<10;i++){
-    if(bonuses.length>=MAX_BONUSES) break;
-    bonuses.push({name:"",cost:0,win:0,opened:false});
-  }
-  render();
-};
+
 document.getElementById("clearSlotsBtn").onclick=()=>{
   bonuses=[];
   render();
 };
-document.getElementById("clearWidgetBtn").onclick=()=>{
-  eventNumberEl.value="";
-  totalSpentEl.value="";
-  widgetCurrencyEl.value="";
-  bonuses=[];
-  update();
-  render();
-};
 
-/* Загрузка при старте */
-window.addEventListener("DOMContentLoaded", ()=>{
-  const initialMode = modeEl.value || "horizontal";
-  loadDataByMode(initialMode);
-});
-
-modeEl.addEventListener("change", ()=>{
-  const selectedMode = modeEl.value || "horizontal";
-  loadDataByMode(selectedMode);
+db.ref(`events/horizontal/${streamerKey}/current`).once('value').then(snapshot=>{
+  const data = snapshot.val();
+  if(data){
+    eventNumberEl.value = data.eventNumber || '';
+    eventTypeEl.value = data.eventType || '';
+    widgetCurrencyEl.value = data.widgetCurrency || '';
+    bonuses = data.bonuses || [];
+    render();
+  }
 });
 
 render();
 </script>
+
 </body>
 </html>
