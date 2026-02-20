@@ -142,7 +142,8 @@ firebase.initializeApp({
 const db = firebase.database();
 
 // ---------------- STREAMER И РЕЖИМ ----------------
-const streamer = "nick1"; // вместо ubtez
+const params = new URLSearchParams(window.location.search);
+const streamer = "nick1";
 const modeParam = (params.get("mode") || "h").toLowerCase();
 const mode = modeParam==="v" ? "vertical" : "horizontal";
 
