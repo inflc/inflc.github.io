@@ -139,17 +139,15 @@ firebase.initializeApp({
 const db = firebase.database();
 
 // ---------------- STREAMER И РЕЖИМ ----------------
-// URL parsing: /w/ubtez/h/ -> streamer=ubtez, mode=h
-const pathParts = location.pathname.split("/").filter(Boolean);
-const streamer = (pathParts[1] || "ubtez").toLowerCase();
-const modeLetter = (pathParts[2] || "h").toLowerCase();
-const mode = modeLetter === "v" ? "vertical" : "horizontal";
+const params = new URLSearchParams(window.location.search);
+const streamer = (params.get("streamer") || "ubtez").toLowerCase();
+const modeParam = (params.get("mode") || "h").toLowerCase();
+const mode = modeParam==="v" ? "vertical" : "horizontal";
 
 // DOM
 const widgetEl = document.getElementById("widget");
 const listEl = document.getElementById("list");
-document.getElementById("streamerName").innerHTML =
-  streamer.toUpperCase() + " <span>🃏</span>";
+document.getElementById("streamerName").innerHTML = streamer.toUpperCase()+" <span>🃏</span>";
 
 // ---------------- ВАЛЮТЫ ----------------
 const currencyMap = {
