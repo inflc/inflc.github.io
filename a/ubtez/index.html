@@ -129,6 +129,7 @@ const MAX_AMOUNT = 99999999;
 const MAX_BONUSES = 100;
 
 let bonuses = [];
+let isInitialLoad = true;
 
 const eventNumberEl = document.getElementById("eventNumber");
 const eventTypeEl = document.getElementById("eventType");
@@ -151,7 +152,7 @@ function restrict(el,max){
     let num = parseInt(val);
     if(num>max) num=max;
     e.target.value = format(num);
-    update();
+    if(!isInitialLoad) update();
   });
 }
 
@@ -229,7 +230,7 @@ function render(){
     });
   });
 
-  update();
+  if(!isInitialLoad) update();
 }
 
 function loadDataByMode(mode){
@@ -243,13 +244,16 @@ function loadDataByMode(mode){
         totalSpentEl.value = data.totalSpent ? format(data.totalSpent) : "";
         bonuses = data.bonuses || [];
       } else {
-        eventNumberEl.value="";
-        eventTypeEl.value="bonusbuy";
-        widgetCurrencyEl.value="";
-        totalSpentEl.value="";
-        bonuses=[];
+        if(isInitialLoad){
+          eventNumberEl.value="";
+          eventTypeEl.value="bonusbuy";
+          widgetCurrencyEl.value="";
+          totalSpentEl.value="";
+          bonuses=[];
+        }
       }
       render();
+      isInitialLoad = false;
     });
 }
 
