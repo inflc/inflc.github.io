@@ -1,11 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>WIDGET</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎰</text></svg>">
-
-
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎰</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -14,11 +12,11 @@
 body{
   margin:0;
   height:100vh;
-  background:#00ff00;
   display:flex;
   justify-content:center;
   align-items:center;
   font-family:'Inter',sans-serif;
+  background:#00ff00;
 }
 .widget{
   width:520px;
@@ -97,16 +95,13 @@ body{
 </head>
 
 <body>
-
 <div class="widget" id="widget">
   <div class="header">
     <div class="left-header">
       <div class="emoji" id="emoji">🎰</div>
       <div class="title" id="title">BONUSBUY #0</div>
     </div>
-    <div class="right-header" id="streamerName">
-      UBTEZ <span>🃏</span>
-    </div>
+    <div class="right-header" id="streamerName">UBTEZ <span>🃏</span></div>
   </div>
 
   <div class="divider"></div>
@@ -125,14 +120,11 @@ body{
 
   <div class="list" id="list"></div>
 
-  <div class="footer-text">
-    ЭТО - ТВОЙ БУДУЩИЙ ВИДЖЕТ!
-  </div>
+  <div class="footer-text">ЭТО - ТВОЙ БУДУЩИЙ ВИДЖЕТ!</div>
 </div>
 
 <script>
-
-// FIREBASE INIT
+// --- FIREBASE INIT ---
 firebase.initializeApp({
   apiKey:"AIzaSyAvA5CAcKwuuHC2Cl8KlUbnkR9BJfp_9pw",
   authDomain:"adminwidget-b69c9.firebaseapp.com",
@@ -141,80 +133,67 @@ firebase.initializeApp({
 });
 const db = firebase.database();
 
-// URL
-const params = new URLSearchParams(window.location.search);
-const streamer = (params.get("streamer") || "ubtez").toLowerCase();
-let mode = (params.get("mode") || "horizontal").toLowerCase();
+// --- STREAMER И MODE ---
+const pathParts = window.location.pathname.split('/').filter(Boolean);
+const streamer = (pathParts[1] || "ubtez").toLowerCase(); // /w/<streamer>/
+let params = new URLSearchParams(window.location.search);
+let mode = (params.get("mode") || "g").toLowerCase(); // g или v
+if(mode !== "v") mode = "g";
 
-// защита от кривых значений
-if(mode !== "vertical") mode = "horizontal";
-
-document.getElementById("streamerName").innerHTML =
-  streamer.toUpperCase()+" <span>🃏</span>";
+// --- ОБНОВЛЕНИЕ ИМЕНИ В HEADER ---
+document.getElementById("streamerName").innerHTML = streamer.toUpperCase() + " <span>🃏</span>";
 
 const widgetEl = document.getElementById("widget");
 const listEl = document.getElementById("list");
 
-// стили режима
-const perPage = mode==="vertical"?5:10;
-listEl.style.height = mode==="vertical"?"215px":"430px";
-widgetEl.style.background = mode==="vertical"
+// --- СТИЛИ РЕЖИМА ---
+const perPage = mode==="v"?5:10;
+listEl.style.height = mode==="v"?"215px":"430px";
+widgetEl.style.background = mode==="v"
   ?"linear-gradient(180deg,#013220 0%,#026644 60%,#014d36 100%)"
   :"linear-gradient(180deg,#3f154f 0%,#2b0f36 60%,#260c30 100%)";
 
-// валюты
-const currencyMap = {
-  RUB:"₽", USD:"$", EUR:"€", KZT:"₸",
-  UAH:"₴", BYN:"Br", USDT:" USDT", BTC:" BTC"
-};
-
+// --- ВАЛЮТЫ ---
+const currencyMap = {RUB:"₽", USD:"$", EUR:"€", KZT:"₸", UAH:"₴", BYN:"Br", USDT:"₮", BTC:"₿"};
 let currencySymbol="";
 let currentPage=0;
 let interval=null;
 
+// --- ФУНКЦИИ ---
 function format(n){ return Number(n||0).toLocaleString("ru-RU"); }
 function limitName(n){ return !n?"":n.length<=25?n:n.substring(0,22)+"..."; }
 function money(n){ return currencySymbol?format(n)+currencySymbol:format(n); }
 
 function render(data){
+  const bonuses = data.bonuses||[];
+  const totalSpent = data.totalSpent||0;
+  const totalWin = bonuses.reduce((s,b)=>s+(b.win||0),0);
+  const opened = bonuses.filter(b=>b.opened).length;
+  const total = bonuses.length;
 
-  const bonuses=data.bonuses||[];
-  const totalSpent=data.totalSpent||0;
-  const totalWin=bonuses.reduce((s,b)=>s+(b.win||0),0);
-  const opened=bonuses.filter(b=>b.opened).length;
-  const total=bonuses.length;
+  document.getElementById("spent").textContent = money(totalSpent);
+  document.getElementById("ratio").textContent = totalSpent>0?(totalWin/totalSpent).toFixed(2)+"x":"0x";
+  document.getElementById("count").textContent = opened+"/"+total;
 
-  document.getElementById("spent").textContent=money(totalSpent);
-  document.getElementById("ratio").textContent=
-    totalSpent>0?(totalWin/totalSpent).toFixed(2)+"x":"0x";
-  document.getElementById("count").textContent=opened+"/"+total;
+  const maxBonus = bonuses.reduce((m,b)=>(b.win||0)>(m.win||0)?b:m ,{win:0});
+  document.getElementById("biggest").innerHTML = maxBonus.win>0 ? `🏆 ${money(maxBonus.win)} — ${limitName(maxBonus.name)} (${money(maxBonus.cost)})` :"🏆 —";
 
-  const maxBonus=bonuses.reduce((m,b)=>
-    (b.win||0)>(m.win||0)?b:m ,{win:0});
-
-  document.getElementById("biggest").innerHTML=
-    maxBonus.win>0
-      ?`🏆 ${money(maxBonus.win)} — ${limitName(maxBonus.name)} (${money(maxBonus.cost)})`
-      :"🏆 —";
-
-  const totalPages=Math.ceil(total/perPage);
-  const nextIndex=bonuses.findIndex(b=>!b.opened);
+  const totalPages = Math.ceil(total/perPage);
+  const nextIndex = bonuses.findIndex(b=>!b.opened);
 
   if(opened!==total){
     if(interval){clearInterval(interval);interval=null;}
-    if(nextIndex>=0) currentPage=Math.floor(nextIndex/perPage);
+    if(nextIndex>=0) currentPage = Math.floor(nextIndex/perPage);
   }
 
   listEl.innerHTML="";
-  const start=currentPage*perPage;
+  const start = currentPage*perPage;
   bonuses.slice(start,start+perPage).forEach((b,i)=>{
     const div=document.createElement("div");
     const globalIndex=start+i;
     div.className="item"+(globalIndex===nextIndex?" current":"");
-    div.innerHTML=`
-      <span>${globalIndex+1}. ${limitName(b.name)} (${money(b.cost)})</span>
-      <span>${b.opened?money(b.win):"-"}</span>
-    `;
+    div.innerHTML = `<span>${globalIndex+1}. ${limitName(b.name)} (${money(b.cost)})</span>
+                     <span>${b.opened?money(b.win):"-"}</span>`;
     listEl.appendChild(div);
   });
 
@@ -227,24 +206,18 @@ function render(data){
   }
 }
 
-// SUBSCRIBE
-db.ref(`events/${mode}/${streamer}/current`)
-.on("value",snap=>{
-  const data=snap.val();
+// --- ПОДПИСКА НА FIREBASE ---
+db.ref(`events/${streamer}/${mode}/current`).on("value", snap=>{
+  const data = snap.val();
   if(!data) return;
 
   currencySymbol = currencyMap[data.widgetCurrency] || "";
-
-  const type=(data.eventType||"bonusbuy").toLowerCase();
-  document.getElementById("emoji").textContent =
-    type==="bonushunt"?"🍀":"🎰";
-
-  document.getElementById("title").textContent =
-    type.toUpperCase()+" #"+(data.eventNumber||0);
+  const type = (data.eventType||"bonusbuy").toLowerCase();
+  document.getElementById("emoji").textContent = type==="bonushunt"?"🍀":"🎰";
+  document.getElementById("title").textContent = type.toUpperCase()+" #"+(data.eventNumber||0);
 
   render(data);
 });
-
 </script>
 </body>
 </html>
